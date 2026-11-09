@@ -1,6 +1,7 @@
-import { expandedDims, state } from './state.js';
 import { $, escapeHtml } from './utils.js';
 import { askUser, confirmAsync, post } from './vscode-api.js';
+import { state, expandedDims, dimTabs } from './state.js';
+
 
 export function renderDimensions() {
   const host = $('#dims-list');
@@ -17,29 +18,56 @@ export function renderDimensions() {
   }
 
   for (const [dimName, def] of entries) {
-    const items = def.items || {};
-    const count = Object.keys(items).length;
+    const items  = def.items || {};
+    const count  = Object.keys(items).length;
     const isOpen = expandedDims.has(dimName);
     const fieldVal = cfg.dimToFieldMap[dimName] ?? '';
+    const cols = def.columns || [];
+    const activeTab = dimTabs.get(dimName) || 'general';
 
-    const roles = [];
-    if (cfg.rowDimension === dimName)
-      roles.push('<span class="dim-badge role-row" title="Row dimension">row</span>');
-    if (cfg.columnDimension === dimName)
-      roles.push('<span class="dim-badge role-col" title="Column dimension">col</span>');
-    if ((cfg.stripDimensions ?? []).includes(dimName))
-      roles.push('<span class="dim-badge role-strip" title="Strip dimension">strip</span>');
+    // --- Содержимое вкладки General ---
+    const generalHtml = `
+      <div class="dim-field-row" style="margin-bottom: 12px;">
+        <label style="width: 100px; flex-shrink: 0;">Title:</label>
+        <input data-f="title" value="${escapeHtml(def.title || '')}" placeholder="(опционально, для UI)">
+      </div>
+      <div class="dim-field-row" style="margin-bottom: 12px;">
+        <label for="field-${escapeHtml(dimName)}" style="width: 100px; flex-shrink: 0;">dimToFieldMap:</label>
+        <input id="field-${escapeHtml(dimName)}"
+               data-cfg-map="${escapeHtml(dimName)}"
+               value="${escapeHtml(fieldVal)}"
+               placeholder="(не задан)">
+      </div>
+    `;
 
-    const countBadge = count === 0
-      ? '<span class="dim-badge empty" title="Нет значений">empty</span>'
-      : `<span class="dim-badge" title="${count} значений">${count}</span>`;
+    // --- Содержимое вкладки Columns ---
+    const colsMarkup = cols.length === 0
+      ? '<p class="muted">Нет колонок. Добавьте колонки для отображения таблиц в render-modules.</p>'
+      : `<table class="cols-table">
+          <thead><tr><th class="col-actions"></th><th>label</th><th>field</th></tr></thead>
+          <tbody>
+            ${cols.map((c, i) => `
+              <tr data-col-idx="${i}">
+                <td class="col-actions">
+                  <button class="small danger" data-act="del-col" data-idx="${i}" title="Удалить колонку">🗑</button>
+                </td>
+                <td><input data-col="label" value="${escapeHtml(c.label || '')}" placeholder="ID"></td>
+                <td><input data-col="field" value="${escapeHtml(c.field || '')}" placeholder="id"></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    
+    const colsHtml = `
+      ${colsMarkup}
+      <div style="margin-top: 8px;">
+        <button class="small" data-act="add-col">+ колонка</button>
+      </div>
+    `;
 
-    const fieldBadge = fieldVal
-      ? `<span class="dim-badge field" title="dimToFieldMap → ${escapeHtml(fieldVal)}">→ ${escapeHtml(fieldVal)}</span>`
-      : '<span class="dim-badge empty" title="dimToFieldMap не задан">no field</span>';
-
+    // --- Содержимое вкладки Items ---
     const itemsMarkup = count === 0
-      ? '<p class="muted">Нет значений.</p>'
+      ? '<p class="muted">Нет значений. Нажмите «+ значение», чтобы добавить.</p>'
       : `<table class="items-table">
           <thead><tr>
             <th class="col-actions"></th>
@@ -61,29 +89,40 @@ export function renderDimensions() {
           </tbody>
         </table>`;
 
+    const itemsHtml = `
+      ${itemsMarkup}
+      <div class="dim-actions" style="justify-content: flex-start; margin-top: 8px;">
+        <button class="small" data-act="add-item">+ значение</button>
+      </div>
+    `;
+
     const card = document.createElement('div');
     card.className = 'dim-card' + (isOpen ? ' is-open' : '');
     card.dataset.dim = dimName;
+    
     card.innerHTML = `
       <div class="dim-header" role="button" tabindex="0" aria-expanded="${isOpen}">
         <span class="dim-chevron">▶</span>
         <span class="dim-name">${escapeHtml(dimName)}</span>
-        ${countBadge}
-        ${roles.join('')}
-        ${fieldBadge}
+        <div class="dim-header-actions">
+          <button class="small ghost" data-act="rename-dim" title="Переименовать размерность">✏️</button>
+          <button class="small danger" data-act="del-dim" title="Удалить размерность">🗑</button>
+        </div>
       </div>
       <div class="dim-body">
-        <div class="dim-field-row">
-          <label for="field-${escapeHtml(dimName)}">dimToFieldMap:</label>
-          <input id="field-${escapeHtml(dimName)}"
-                 data-cfg-map="${escapeHtml(dimName)}"
-                 value="${escapeHtml(fieldVal)}"
-                 placeholder="(не задан)">
+        <div class="dim-subtabs">
+          <button class="dim-subtab-btn ${activeTab === 'general' ? 'active' : ''}" data-subtab="general">General</button>
+          <button class="dim-subtab-btn ${activeTab === 'columns' ? 'active' : ''}" data-subtab="columns">Columns</button>
+          <button class="dim-subtab-btn ${activeTab === 'items' ? 'active' : ''}" data-subtab="items">Items (${count})</button>
         </div>
-        ${itemsMarkup}
-        <div class="dim-actions">
-          <button class="small" data-act="add-item">+ значение</button>
-          <button class="small danger" data-act="del-dim">🗑 удалить размерность</button>
+        <div class="dim-subtab-content ${activeTab === 'general' ? 'active' : ''}" data-subtab-content="general">
+          ${generalHtml}
+        </div>
+        <div class="dim-subtab-content ${activeTab === 'columns' ? 'active' : ''}" data-subtab-content="columns">
+          ${colsHtml}
+        </div>
+        <div class="dim-subtab-content ${activeTab === 'items' ? 'active' : ''}" data-subtab-content="items">
+          ${itemsHtml}
         </div>
       </div>`;
     host.appendChild(card);
@@ -94,11 +133,30 @@ export function attachDimensionsHandlers() {
   const host = $('#dims-list');
   if (!host) return;
 
+  // Обработка кликов
   host.addEventListener('click', async (e) => {
+    // 1. Переключение под-вкладок
+    const subtabBtn = e.target.closest('.dim-subtab-btn');
+    if (subtabBtn) {
+      const card = subtabBtn.closest('.dim-card');
+      const dim = card.dataset.dim;
+      const tab = subtabBtn.dataset.subtab;
+      
+      dimTabs.set(dim, tab);
+      
+      // Меняем классы без полного ре-рендера
+      card.querySelectorAll('.dim-subtab-btn').forEach(btn => btn.classList.toggle('active', btn === subtabBtn));
+      card.querySelectorAll('.dim-subtab-content').forEach(content => {
+        content.classList.toggle('active', content.dataset.subtabContent === tab);
+      });
+      return;
+    }
+
+    // 2. Сворачивание/разворачивание
     const header = e.target.closest('.dim-header');
     if (header && !e.target.closest('button')) {
       const card = header.closest('.dim-card');
-      const dim = card.dataset.dim;
+      const dim  = card.dataset.dim;
       const open = expandedDims.has(dim);
       if (open) expandedDims.delete(dim); else expandedDims.add(dim);
       card.classList.toggle('is-open', !open);
@@ -106,27 +164,70 @@ export function attachDimensionsHandlers() {
       return;
     }
 
+    // 3. Кнопки действий
     const t = e.target.closest('button');
     if (!t) return;
-    const act = t.dataset.act;
+    const act  = t.dataset.act;
     const card = t.closest('.dim-card');
-    const dim = card?.dataset.dim;
+    const dim  = card?.dataset.dim;
 
-    if (act === 'add-item') await onAddItem(dim);
-    else if (act === 'del-dim') await onDeleteDim(dim);
+    if (act === 'add-item')      await onAddItem(dim);
+    else if (act === 'del-dim')  await onDeleteDim(dim);
     else if (act === 'del-item') onDeleteItem(dim, t.closest('tr')?.dataset.slug);
+    else if (act === 'rename-dim') await onRenameDim(dim);
+    else if (act === 'add-col') {
+      const def = state.draft.dimensions[dim];
+      if (!def.columns) def.columns = [];
+      def.columns.push({ label: '', field: '' });
+      renderDimensions();
+    }
+    else if (act === 'del-col') {
+      const idx = parseInt(t.dataset.idx, 10);
+      const def = state.draft.dimensions[dim];
+      if (def.columns && def.columns[idx]) {
+        def.columns.splice(idx, 1);
+        renderDimensions();
+      }
+    }
   });
 
+  // Обработка изменений в инпутах (change)
   host.addEventListener('change', (e) => {
-    if (e.target.dataset.cfgMap !== undefined) {
-      onFieldMapChange(e.target.dataset.cfgMap, e.target.value);
+    const card = e.target.closest('.dim-card');
+    if (!card) return;
+    const dim = card.dataset.dim;
+    const def = state.draft.dimensions[dim];
+    if (!def) return;
+
+    // Title
+    if (e.target.dataset.f === 'title') {
+      const val = e.target.value.trim();
+      if (val) def.title = val; else delete def.title;
       return;
     }
+
+    // dimToFieldMap
+    if (e.target.dataset.cfgMap !== undefined) {
+      onFieldMapChange(dim, e.target.value);
+      return;
+    }
+
+    // Columns (label, field)
+    if (e.target.dataset.col) {
+      const tr = e.target.closest('tr');
+      const idx = parseInt(tr.dataset.colIdx, 10);
+      const colType = e.target.dataset.col;
+      if (def.columns && def.columns[idx]) {
+        def.columns[idx][colType] = e.target.value;
+      }
+      return;
+    }
+
+    // Items (slug, title, dir)
     const inp = e.target.closest('input[data-field]');
     if (!inp) return;
-    const card = inp.closest('.dim-card');
     const tr = inp.closest('tr');
-    onItemFieldChange(card?.dataset.dim, tr?.dataset.slug, inp.dataset.field, inp.value);
+    onItemFieldChange(dim, tr?.dataset.slug, inp.dataset.field, inp.value);
   });
 
   host.addEventListener('keydown', (e) => {
@@ -134,6 +235,57 @@ export function attachDimensionsHandlers() {
     const header = e.target.closest('.dim-header');
     if (header) { e.preventDefault(); header.click(); }
   });
+}
+
+async function onRenameDim(oldName) {
+  const newName = await askUser(
+    `Новое имя (slug) для размерности "${oldName}":`, oldName
+  );
+  if (!newName) return;
+  const name = newName.trim();
+  if (!name || name === oldName) return;
+
+  if (state.draft.dimensions[name]) {
+    post({ type: 'error', message: `Размерность "${name}" уже существует` });
+    return;
+  }
+
+  const cfg  = state.draft.config;
+  const dims = state.draft.dimensions;
+
+  // 1. Переименовать ключ с сохранением порядка
+  const ordered = {};
+  for (const [k, v] of Object.entries(dims)) {
+    ordered[k === oldName ? name : k] = v;
+  }
+  state.draft.dimensions = ordered;
+
+  // 2. config.*
+  if (cfg.rowDimension    === oldName) cfg.rowDimension    = name;
+  if (cfg.columnDimension === oldName) cfg.columnDimension = name;
+  if (Array.isArray(cfg.stripDimensions)) {
+    cfg.stripDimensions = cfg.stripDimensions.map(x => x === oldName ? name : x);
+  }
+  if (cfg.dimToFieldMap[oldName] !== undefined) {
+    cfg.dimToFieldMap[name] = cfg.dimToFieldMap[oldName];
+    delete cfg.dimToFieldMap[oldName];
+  }
+
+  // 3. fields[].dimension
+  if (state.draft.fields) {
+    for (const f of Object.values(state.draft.fields)) {
+      if (f && f.dimension === oldName) f.dimension = name;
+    }
+  }
+
+  // 4. состояние раскрытия
+  if (expandedDims.has(oldName)) {
+    expandedDims.delete(oldName);
+    expandedDims.add(name);
+  }
+
+  renderDimensions();
+  window.dispatchEvent(new CustomEvent('fm:dims-changed'));
 }
 
 async function onAddItem(dim) {
@@ -155,9 +307,11 @@ async function onDeleteDim(dim) {
   if (!ok) return;
 
   const cfg = state.draft.config;
-  if (cfg.rowDimension === dim) cfg.rowDimension = '';
+  if (cfg.rowDimension    === dim) cfg.rowDimension    = '';
   if (cfg.columnDimension === dim) cfg.columnDimension = '';
-  if (Array.isArray(cfg.stripDimensions)) cfg.stripDimensions = cfg.stripDimensions.filter(x => x !== dim);
+  if (Array.isArray(cfg.stripDimensions)) {
+    cfg.stripDimensions = cfg.stripDimensions.filter(x => x !== dim);
+  }
   delete cfg.dimToFieldMap[dim];
   delete state.draft.dimensions[dim];
   expandedDims.delete(dim);

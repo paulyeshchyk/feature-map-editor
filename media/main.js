@@ -7,9 +7,16 @@ import { applyInit, isLoaded, markSaved } from './state.js';
 import { attachToolbarHandlers } from './toolbar.js';
 import { $$, setStatus } from './utils.js';
 import { post } from './vscode-api.js';
+import { renderFields, attachFieldsHandlers } from './fields.js';
+
 
 function renderAll() {
-  renderDimensions(); renderAxes(); renderFilters(); renderSettings(); renderPreview();
+  renderFields();
+  renderDimensions();
+  renderAxes();
+  renderFilters();
+  renderSettings();
+  renderPreview();
 }
 
 function initTabs() {
@@ -31,9 +38,16 @@ function initMessageBridge() {
     }
     if (msg.type === 'saved') { markSaved(); setStatus('Сохранено', 'ok'); return; }
     if (msg.type === 'saveError') {
-      setStatus('Ошибка валидации', 'error');
+      setStatus(`Ошибка: ${msg.issues.length} проблем(ы)`, 'error');
       console.error('[fm-editor] validation issues:', msg.issues);
-      post({ type: 'error', message: (msg.issues || []).map(i => `[${i.code}] ${i.message}`).join('\n') });
+      // Показать в Preview → Warnings
+      const wl = document.querySelector('#preview-warnings');
+      if (wl) {
+        wl.innerHTML = msg.issues.map(i =>
+          `<li style="color:var(--vscode-errorForeground)">
+            [${i.code}] ${escapeHtml(i.message)}
+          </li>`).join('');
+      }
       return;
     }
     if (msg.type === 'generated') { setStatus(msg.message, msg.ok ? 'ok' : 'error'); return; }
@@ -43,11 +57,12 @@ function initMessageBridge() {
 
 // Реакция на изменения размерностей — из любого модуля
 window.addEventListener('fm:dims-changed', () => {
-  renderAxes(); renderFilters(); renderSettings(); renderPreview();
+  renderFields();renderAxes(); renderFilters(); renderSettings(); renderPreview();
 });
 
 function bootstrap() {
   initTabs(); initMessageBridge();
+  attachFieldsHandlers()
   attachDimensionsHandlers(); attachToolbarHandlers();
   if (!isLoaded()) setStatus('Ожидание инициализации…');
   post({ type: 'ready' });

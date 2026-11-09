@@ -6,6 +6,8 @@ import { renderSettings } from './settings.js';
 import { expandedDims, resetToBaseline, state } from './state.js';
 import { $, setStatus } from './utils.js';
 import { askUser, post } from './vscode-api.js';
+import { expandedFields } from './state.js';
+import { renderFields } from './fields.js';
 
 export function attachToolbarHandlers() {
   const save = $('#btn-save');
@@ -40,5 +42,19 @@ export function attachToolbarHandlers() {
     state.draft.dimensions[name] = { items: {} };
     expandedDims.add(name);
     renderDimensions(); renderAxes(); renderFilters(); renderSettings();
+  };
+
+  const addField = $('#btn-add-field');
+  if (addField) addField.onclick = async () => {
+    if (!state.draft) return;
+    const name = await askUser('Имя поля (ключ):');
+    if (!name) return;
+    if (state.draft.fields[name]) {
+      post({ type: 'error', message: `Поле "${name}" уже существует` });
+      return;
+    }
+    state.draft.fields[name] = { kind: 'multi', source: 'frontmatter' };
+    expandedFields.add(name);
+    renderFields();
   };
 }

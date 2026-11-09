@@ -11,6 +11,7 @@
   <header class="toolbar">
     <nav class="tabs">
       <button data-tab="dimensions" class="active">Dimensions</button>
+      <button data-tab="fields">Fields</button> 
       <button data-tab="axes">Axes &amp; Roles</button>
       <button data-tab="filters">Filters</button>
       <button data-tab="preview">Preview</button>
@@ -26,6 +27,13 @@
   </header>
 
   <main class="content">
+    <section data-tab-content="fields" hidden>
+      <div class="section-head">
+        <h2>Поля (Fields)</h2>
+        <button id="btn-add-field" class="small">+ Добавить поле</button>
+      </div>
+      <div id="fields-list"></div>
+    </section>
     <section data-tab-content="dimensions">
       <div class="section-head">
         <h2>Размерности</h2>

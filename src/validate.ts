@@ -6,6 +6,49 @@ export function validateDraft(d: EditorDraft): ValidationIssue[] {
   const out: ValidationIssue[] = [];
   const cfg = d.config;
 
+  // ── Row/Column должны быть выбраны и существовать ──
+  if (!cfg.rowDimension || !d.dimensions[cfg.rowDimension]) {
+    out.push({
+      level: 'error', code: 'ROW_MISSING',
+      message: 'Row dimension не выбрана или была удалена',
+    });
+  }
+  if (!cfg.columnDimension || !d.dimensions[cfg.columnDimension]) {
+    out.push({
+      level: 'error', code: 'COL_MISSING',
+      message: 'Column dimension не выбрана или была удалена',
+    });
+  }
+
+  // ── dimToFieldMap для row/col ──
+  if (cfg.rowDimension && !cfg.dimToFieldMap[cfg.rowDimension]) {
+    out.push({
+      level: 'error', code: 'ROW_NO_FIELD',
+      message: `dimToFieldMap["${cfg.rowDimension}"] не задан`,
+    });
+  }
+  if (cfg.columnDimension && !cfg.dimToFieldMap[cfg.columnDimension]) {
+    out.push({
+      level: 'error', code: 'COL_NO_FIELD',
+      message: `dimToFieldMap["${cfg.columnDimension}"] не задан`,
+    });
+  }  
+
+  for (const [key, f] of Object.entries(d.fields || {})) {
+    if (f.dimension && !d.dimensions[f.dimension]) {
+      out.push({
+        level: 'error', code: 'FIELD_DIM_MISSING',
+        message: `Поле "${key}": размерность "${f.dimension}" не существует`,
+      });
+    }
+    if (f.kind === 'multi' && f.dimension && !f.dimField) {
+      out.push({
+        level: 'warning', code: 'FIELD_NO_DIMFIELD',
+        message: `Поле "${key}": kind=multi, но dimField не задан — в каталог не попадут значения`,
+      });
+    }
+  }
+
   // 1. row/column должны иметь dimToFieldMap
   const rowField = cfg.dimToFieldMap[cfg.rowDimension];
   if (!rowField) out.push({ level: 'error', code: 'ROW_NO_FIELD', message: `dimToFieldMap["${cfg.rowDimension}"] не задан` });

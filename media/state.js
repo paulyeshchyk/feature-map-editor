@@ -5,6 +5,8 @@ export const state = {
 };
 
 export const expandedDims = new Set();
+export const expandedFields = new Set();
+export const dimTabs = new Map();
 
 export function applyInit(msg) {
   if (!msg?.state?.draft) return;
