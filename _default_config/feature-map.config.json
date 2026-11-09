@@ -1,0 +1,27 @@
+{
+  "outputPathTemplate": "{lang}/Модули/FM/feature-map.md",
+  "moduleHrefAnchor": "naznachenie",
+  "moduleHrefTemplate": "/{docsRootRel}/{dir}/index.html#{anchor}",
+  "stripDimensions": [
+    "actor",
+    "capability"
+  ],
+  "stripLabels": {
+    "actor": "Actor",
+    "capability": "Capability"
+  },
+  "rowDimension": "family",
+  "columnDimension": "layer",
+  "dimToFieldMap": {
+    "actor": "actors",
+    "capability": "capabilities",
+    "layer": "layers",
+    "family": "families"
+  },
+  "title": "Feature Map",
+  "sectionType": "Page",
+  "counterPlaceholder": "Показано: —",
+  "resetButtonText": "Сбросить все",
+  "emptyCellSymbol": "·",
+  "chipLabelField": "ident"
+}

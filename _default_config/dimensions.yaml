@@ -1,0 +1,172 @@
+dimensions:
+  actor:
+    title: Актор
+    columns:
+      - label: ID
+        field: id
+      - label: Модуль
+        field: ident
+      - label: Роль
+        field: role
+      - label: Что делает
+        field: designation
+    items:
+      reader:
+        dir: Акторы/АкторЧитатель
+        title: Читатель
+      techwriter:
+        dir: Акторы/АкторТехписатель
+        title: Техписатель
+      admin:
+        dir: Акторы/АкторАдминистратор
+        title: Администратор
+      ci:
+        dir: Акторы/АкторCI
+        title: CI
+  family:
+    title: Семейство
+    columns:
+      - label: ID
+        field: id
+      - label: Модуль
+        field: ident
+      - label: Роль
+        field: role
+      - label: Что делает
+        field: designation
+    items:
+      fam-json-generators:
+        dir: Семействоfamily/СемействоJSONгенераторы
+        title: JSON генераторы
+      fam-footnote:
+        dir: Семействоfamily/СемействоСноски
+        title: Сноски
+      fam-helptags:
+        dir: Семействоfamily/СемействоHelptags
+        title: Helptags
+      fam-json:
+        dir: Семействоfamily/СемействоJSONгенераторы
+        title: JSON генераторы
+      fam-abbrs:
+        dir: Семействоfamily/СемействоАббревиатуры
+        title: Аббревиатуры
+      fam-gosts:
+        dir: Семействоfamily/СемействоГОСТы
+        title: ГОСТы
+      fam-roadmap:
+        dir: Семействоfamily/СемействоДорожнаякарта
+        title: Дорожная карта
+      fam-figures:
+        dir: Семействоfamily/СемействоИллюстрации
+        title: Иллюстрации
+      fam-infrastructure:
+        dir: Семействоfamily/СемействоИнфраструктура
+        title: Инфраструктура
+      fam-kommentariji:
+        dir: Семействоfamily/СемействоКомментариипользователей
+        title: Комментарии пользователей
+      fam-context-tags:
+        dir: Семействоfamily/СемействоКонтекстныетеги
+        title: Контекстные теги
+      fam-contexts:
+        dir: Семействоfamily/СемействоКонтексты
+        title: Контексты
+      fam-sekciyi:
+        dir: Семействоfamily/СемействоСекции
+        title: Секции
+      fam-links:
+        dir: Семействоfamily/СемействоСсылки
+        title: Ссылки
+      fam-terms:
+        dir: Семействоfamily/СемействоТермины
+        title: Термины
+      fam-illustrations:
+        dir: Семействоfamily/СемействоИллюстрации
+        title: Иллюстрации
+      fam-docs-registry:
+        dir: Семействоfamily/СемействоDocsRegistry
+        title: Docs Registry
+  layer:
+    title: Слой
+    columns:
+      - label: ID
+        field: id
+      - label: Модуль
+        field: ident
+      - label: Роль
+        field: role
+      - label: Что делает
+        field: designation
+    items:
+      build:
+        dir: Слоиlayer/СлойBuild
+        title: Build
+      cli:
+        dir: Слоиlayer/СлойCLI
+        title: CLI
+      post-processing:
+        dir: Слоиlayer/СлойPostprocessing
+        title: HTML
+      pre-processing:
+        dir: Слоиlayer/СлойPreprocessing
+        title: MD
+      vscode-ui:
+        dir: Слоиlayer/СлойVSCodeUI
+        title: VSCode UI
+      client-runtime:
+        dir: Слоиlayer/СлойКлиентскийruntime
+        title: Клиентский runtime
+      shared-core:
+        dir: Слоиlayer/СлойОбщееядро
+        title: Общее ядро
+  capability:
+    title: Capability
+    columns:
+      - label: ID
+        field: id
+      - label: Модуль
+        field: ident
+      - label: Роль
+        field: role
+      - label: Что делает
+        field: designation
+    items:
+      json-to-md:
+        dir: КаталогCapabilitymap/КаталогКонвертер
+        title: Конвертер
+      rezhimy-otobrazheniya:
+        dir: КаталогCapabilitymap/КаталогРежимыотображения
+        title: Режимы отображения
+      dorozhnaya-karta:
+        dir: КаталогCapabilitymap/КаталогДорожнаякарта
+        title: Дорожная карта
+      infrastruktura:
+        dir: КаталогCapabilitymap/КаталогИнфраструктура
+        title: Инфраструктура
+      kontent:
+        dir: КаталогCapabilitymap/КаталогКонтент
+        title: Контент
+      lintery:
+        dir: КаталогCapabilitymap/КаталогЛинтеры
+        title: Линтеры
+      navigatsiya:
+        dir: КаталогCapabilitymap/КаталогНавигация
+        title: Навигация
+      otchyoty:
+        dir: КаталогCapabilitymap/КаталогОтчёты
+        title: Отчёты
+      predstavlenie-dannykh:
+        dir: КаталогCapabilitymap/КаталогПредставлениеданных
+        title: Представление данных
+      ssylki:
+        dir: КаталогCapabilitymap/КаталогСсылки
+        title: Ссылки
+      struktura:
+        dir: КаталогCapabilitymap/КаталогСтруктура
+        title: Структура
+      terminologiya:
+        dir: КаталогCapabilitymap/КаталогТерминология
+        title: Терминология
+      reestr:
+        dir: КаталогCapabilitymap/КаталогРеестр
+        title: Реестр

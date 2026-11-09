@@ -1,0 +1,82 @@
+fields:
+  id:
+    frontmatterKey: ID
+    kind: scalar
+    format: plain
+    order: 10
+    alias: ID
+    required: true
+  ident:
+    frontmatterKey: Идентификатор
+    kind: scalar
+    format: backtick
+    order: 20
+    alias: Модуль
+    required: true
+  actor:
+    kind: multi
+    format: backtick
+    join: ' + '
+    order: 30
+    alias: Актор
+    dimension: actor
+    dimField: actors
+    useAs: filter
+  layer:
+    kind: multi
+    format: backtick
+    join: ' / '
+    order: 40
+    alias: Слой
+    dimension: layer
+    dimField: layers
+    useAs: matrix-row
+  family:
+    kind: multi
+    format: backtick
+    join: ' + '
+    order: 50
+    alias: Семейство
+    dimension: family
+    dimField: families
+    useAs: matrix-col
+  capability:
+    kind: multi
+    format: backtick
+    join: ' + '
+    order: 60
+    alias: Каталог
+    dimension: capability
+    dimField: capabilities
+    useAs: filter
+  designation:
+    kind: scalar
+    format: plain
+    order: 70
+    alias: Предназначение
+  role:
+    kind: scalar
+    format: plain
+    order: 80
+    alias: Роль
+  folder:
+    kind: multi
+    format: double
+    join: '; '
+    order: 90
+    alias: Папка
+  entrypoint:
+    kind: scalar
+    format: backtick
+    order: 100
+    alias: Точка входа
+  version:
+    kind: scalar
+    format: backtick
+    order: 110
+    alias: Версия
+  pureTitle:
+    kind: scalar
+    format: plain
+    order: 120
+    alias: Название

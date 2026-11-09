@@ -1,0 +1,11 @@
+{
+  "modulesFolder": "Модули",
+  "modulePrefix": "Модуль",
+  "moduleIndexFile": "index.md",
+  "moduleSectionTypes": null,
+  "outFolder": "Реестр",
+  "skipDirs": [],
+  "strictDimensions": true,
+  "includeEmpty": false,
+  "emptyLabel": "Без значения"
+}

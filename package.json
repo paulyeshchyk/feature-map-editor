@@ -1,0 +1,61 @@
+{
+  "name": "feature-map-editor",
+  "displayName": "Feature Map Editor",
+  "description": "Редактор конфигурации модуля emit-feature-map",
+  "version": "0.1.0",
+  "publisher": "paulyestchick",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "featureMap.openEditor",
+        "title": "Feature Map: Open Editor"
+      },
+      {
+        "command": "featureMap.generate",
+        "title": "Feature Map: Generate"
+      }
+    ],
+    "configuration": {
+      "title": "Feature Map Editor",
+      "properties": {
+        "featureMap.docsProjectRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Корень проекта (папка с docs/). Пусто — автопоиск от workspaceFolder."
+        },
+        "featureMap.lang": {
+          "type": "string",
+          "default": "ru",
+          "description": "Язык (для catalog.<lang>.json и dimensions.<lang>.yaml)"
+        },
+        "featureMap.cliPath": {
+          "type": "string",
+          "default": "plugins/diplodoc-helper-cli.js",
+          "description": "Путь к CLI для команды Generate"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "typescript": "^5.3.0"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  }
+}
