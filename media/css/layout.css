@@ -1,0 +1,37 @@
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 10;
+}
+.tabs button {
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  color: inherit;
+  border-bottom: 2px solid transparent;
+}
+.tabs button.active {
+  border-bottom-color: var(--vscode-focusBorder);
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.content {
+  padding: 16px 24px;
+}
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}

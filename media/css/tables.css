@@ -1,0 +1,37 @@
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.items-table th,
+.items-table td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.items-table .col-actions {
+  width: 32px;
+  padding: 4px 0;
+  text-align: center;
+}
+.items-table .col-actions button {
+  padding: 2px 6px;
+  font-size: 14px;
+}
+.items-table input[data-field="__slug"] {
+  font-family: var(--vscode-editor-font-family);
+  min-width: 100px;
+}
+
+.cols-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.cols-table th,
+.cols-table td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
