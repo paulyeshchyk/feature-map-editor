@@ -23,11 +23,23 @@ export interface ResolvedPaths {
   catalogPath: string;
 }
 
-/** Автопоиск корня: ищем docs/_registry от workspaceFolder вверх. */
+export interface ProjectConfig {
+  projectName: string;
+  isNative: boolean; // true = настройки из yfm, false = fallback
+  paths: ResolvedPaths;
+}
+
+const YFM_NAMES = ['.yfm', 'yfm-config.yaml', 'yfm-config.yml'];
+
+
+/** Автопоиск корня: ищем ./_registry от workspaceFolder вверх. */
 export function discoverProjectRoot(workspaceRoot: string): string | null {
   let cur = workspaceRoot;
   for (let i = 0; i < 8; i++) {
-    if (fs.existsSync(path.join(cur, 'docs', '_registry'))) return cur;
+    if (fs.existsSync(path.join(cur, 'docs', '_registry')) || 
+        YFM_NAMES.some(f => fs.existsSync(path.join(cur, f)))) {
+      return cur;
+    }
     const parent = path.dirname(cur);
     if (parent === cur) break;
     cur = parent;
@@ -35,20 +47,70 @@ export function discoverProjectRoot(workspaceRoot: string): string | null {
   return null;
 }
 
-export function resolvePaths(projectRoot: string, lang: string): ResolvedPaths {
-  const docsDir = path.join(projectRoot, 'docs');
+export function resolveProject(projectRoot: string, lang: string): ProjectConfig {
+  let yfmPath = '';
+  for (const name of YFM_NAMES) {
+    const p = path.join(projectRoot, name);
+    if (fs.existsSync(p)) { yfmPath = p; break; }
+  }
+
+  let yfm: any = null;
+  if (yfmPath) {
+    try { yfm = yaml.load(fs.readFileSync(yfmPath, 'utf8')) || {}; }
+    catch (e) { console.warn(`[config] Ошибка чтения ${yfmPath}:`, e); }
+  }
+
+  const customConfig = yfm?.py_feature_map;
+  const docsDir = projectRoot; // <-- Убрали path.join(projectRoot, 'docs')
   const registryDir = path.join(docsDir, '_registry');
   const generatedDir = path.join(docsDir, '_generated');
-  // dimensions: <lang>.yaml -> dimensions.yaml
+
+  const isNative = !!customConfig;
+  // В fallback-режиме показываем полный путь, в native — красивое имя
+  const projectName = customConfig?.projectName 
+    || yfm?.title 
+    || (isNative ? path.basename(projectRoot) : projectRoot);
+
+  // Если конфиг в yfm найден — используем его
+  if (isNative) {
+    const interpolate = (str: string) => str.replace(/\{lang\}/g, lang);
+    const abs = (p: string) => path.isAbsolute(p) ? p : path.join(projectRoot, p);
+
+    const langYaml = abs(`_registry/${lang}.yaml`);
+    const sharedYaml = abs(`_registry/dimensions.yaml`);
+    const dimsPath = customConfig.dimensions
+      ? abs(interpolate(customConfig.dimensions))
+      : (fs.existsSync(langYaml) ? langYaml : sharedYaml);
+
+    return {
+      projectName,
+      isNative: true,
+      paths: {
+        projectRoot, docsDir, registryDir, generatedDir,
+        configPath: abs(interpolate(customConfig.config || '_registry/feature-map.config.json')),
+        layoutPath: abs(interpolate(customConfig.layout || '_registry/layout.json')),
+        fieldsPath: abs(interpolate(customConfig.fields || '_registry/fields.yaml')),
+        dimensionsPath: dimsPath,
+        catalogPath: abs(interpolate(customConfig.catalog || '_generated/catalog.{lang}.json')),
+      }
+    };
+  }
+
+  // Fallback
   const langYaml = path.join(registryDir, `${lang}.yaml`);
   const sharedYaml = path.join(registryDir, 'dimensions.yaml');
+  
   return {
-    projectRoot, docsDir, registryDir, generatedDir,
-    configPath: path.join(registryDir, 'feature-map.config.json'),
-    layoutPath: path.join(registryDir, 'layout.json'),
-    fieldsPath: path.join(registryDir, 'fields.yaml'),
-    dimensionsPath: fs.existsSync(langYaml) ? langYaml : sharedYaml,
-    catalogPath: path.join(generatedDir, `catalog.${lang}.json`),
+    projectName,
+    isNative: false,
+    paths: {
+      projectRoot, docsDir, registryDir, generatedDir,
+      configPath: path.join(registryDir, 'feature-map.config.json'),
+      layoutPath: path.join(registryDir, 'layout.json'),
+      fieldsPath: path.join(registryDir, 'fields.yaml'),
+      dimensionsPath: fs.existsSync(langYaml) ? langYaml : sharedYaml,
+      catalogPath: path.join(generatedDir, `catalog.${lang}.json`),
+    }
   };
 }
 
@@ -142,33 +204,64 @@ function readCatalog(file: string): { value: CatalogSnapshot | null; warnings: s
 
 // ---- public ---------------------------------------------------------
 
-export function loadAll(paths: ResolvedPaths): EditorState {
+export function loadAll(project: ProjectConfig): EditorState {
+  const { paths, projectName, isNative } = project;
+  
   const layout  = readLayout(paths.layoutPath);
   const config  = readConfig(paths.configPath);
   const fields  = readFields(paths.fieldsPath);
   const dims    = readDimensions(paths.dimensionsPath);
   const catalog = readCatalog(paths.catalogPath);
-  const warnings = [...layout.warnings, ...config.warnings, ...fields.warnings, ...dims.warnings, ...catalog.warnings];
+  
+  const warnings = [
+    ...layout.warnings, 
+    ...config.warnings, 
+    ...fields.warnings, 
+    ...dims.warnings, 
+    ...catalog.warnings
+  ];
+
+  // Если fallback — добавляем предупреждение на уровне данных, а не в UI
+  if (!isNative) {
+    warnings.unshift("⚠ Внимание: настройки загружены в fallback-режиме. В файле .yfm не найдена секция 'py_feature_map'.");
+  }
+
   return {
     draft: { config: config.value, layout: layout.value, fields: fields.value, dimensions: dims.value },
     unknownConfigKeys: config.unknown,
     unknownLayoutKeys: layout.unknown,
     catalog: catalog.value,
-    paths, warnings,
+    projectName, // <-- берем из project
+    isNative,    // <-- берем из project
+    paths,
+    warnings,    
   };
 }
-
 export interface SaveResult { written: string[]; }
 
 export function saveAll(paths: ResolvedPaths, draft: EditorDraft, unknown: { config: Record<string, unknown>; layout: Record<string, unknown> }): SaveResult {
   const written: string[] = [];
-  // config: known + unknown (сохраняем forward-compat)
-  fs.writeFileSync(paths.configPath, JSON.stringify({ ...draft.config, ...unknown.config }, null, 2) + '\n', 'utf8'); written.push(paths.configPath);
-  // layout
-  fs.writeFileSync(paths.layoutPath, JSON.stringify({ ...draft.layout, ...unknown.layout }, null, 2) + '\n', 'utf8'); written.push(paths.layoutPath);
-  // fields (YAML - теряем комментарии, это ожидаемо)
-  fs.writeFileSync(paths.fieldsPath, yaml.dump({ fields: draft.fields }, { lineWidth: 120, noRefs: true }), 'utf8'); written.push(paths.fieldsPath);
-  // dimensions
-  fs.writeFileSync(paths.dimensionsPath, yaml.dump({ dimensions: draft.dimensions }, { lineWidth: 120, noRefs: true }), 'utf8'); written.push(paths.dimensionsPath);
+  
+  const ensureDir = (p: string) => {
+    const dir = path.dirname(p);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  };
+
+  ensureDir(paths.configPath);
+  fs.writeFileSync(paths.configPath, JSON.stringify({ ...draft.config, ...unknown.config }, null, 2) + '\n', 'utf8'); 
+  written.push(paths.configPath);
+
+  ensureDir(paths.layoutPath);
+  fs.writeFileSync(paths.layoutPath, JSON.stringify({ ...draft.layout, ...unknown.layout }, null, 2) + '\n', 'utf8'); 
+  written.push(paths.layoutPath);
+
+  ensureDir(paths.fieldsPath);
+  fs.writeFileSync(paths.fieldsPath, yaml.dump({ fields: draft.fields }, { lineWidth: 120, noRefs: true }), 'utf8'); 
+  written.push(paths.fieldsPath);
+
+  ensureDir(paths.dimensionsPath);
+  fs.writeFileSync(paths.dimensionsPath, yaml.dump({ dimensions: draft.dimensions }, { lineWidth: 120, noRefs: true }), 'utf8'); 
+  written.push(paths.dimensionsPath);
+
   return { written };
 }

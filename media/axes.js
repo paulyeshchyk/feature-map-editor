@@ -9,17 +9,26 @@ export function renderAxes() {
   const rowSel = $('#sel-row'), colSel = $('#sel-col');
   if (!rowSel || !colSel) return;
 
-  const fill = (sel, val) => {
+  const fill = (sel, val, isRow) => {
     sel.innerHTML = '';
+
+    // Если пусто, но размерности есть — принудительно выбираем первую
+    let effectiveVal = val;
+    if (!effectiveVal && dimNames.length > 0) {
+      effectiveVal = isRow ? dimNames[0] : (dimNames[1] || dimNames[0]);
+      if (isRow) cfg.rowDimension = effectiveVal;
+      else cfg.columnDimension = effectiveVal;
+    }
+
     for (const d of dimNames) {
       const opt = document.createElement('option');
       opt.value = d; opt.textContent = d;
-      if (d === val) opt.selected = true;
+      if (d === effectiveVal) opt.selected = true;
       sel.appendChild(opt);
     }
   };
-  fill(rowSel, cfg.rowDimension);
-  fill(colSel, cfg.columnDimension);
+  fill(rowSel, cfg.rowDimension, true);
+  fill(colSel, cfg.columnDimension, false);
 
   rowSel.onchange = () => { cfg.rowDimension = rowSel.value; renderAxes(); renderDimensions(); };
   colSel.onchange = () => { cfg.columnDimension = colSel.value; renderAxes(); renderDimensions(); };

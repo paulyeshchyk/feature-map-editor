@@ -1,7 +1,9 @@
+import * as yaml from 'js-yaml';
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
-import { discoverProjectRoot, loadAll, resolvePaths, saveAll } from './config';
+import { discoverProjectRoot, loadAll, resolveProject, saveAll } from './config';
 import type {
   EditorDraft, EditorState, ExtensionMessage, WebviewMessage
 } from './protocol';
@@ -82,22 +84,96 @@ export class EditorPanel {
 
   private async refresh(): Promise<void> {
     const root = await this.resolveRoot();
-    if (!root) { this.post({ type: 'error', message: 'Не найден корень проекта (docs/_registry). Задайте featureMap.docsProjectRoot.' }); return; }
+    if (!root) {
+      this.post({ type: 'error', message: 'Не найден корень проекта (нет .yfm или ./_registry). Задайте featureMap.docsProjectRoot.' });
+      return;
+    }
+
     const lang = vscode.workspace.getConfiguration('featureMap').get<string>('lang') || 'ru';
-    const paths = resolvePaths(root, lang);
-    this.state = loadAll(paths);
+    const project = resolveProject(root, lang);
+
+    // Вся логика сборки стейта теперь внутри loadAll
+    this.state = loadAll(project);
+
     this.post({ type: 'init', state: this.state });
   }
 
   private async save(draft: EditorDraft): Promise<void> {
     if (!this.state) return this.post({ type: 'error', message: 'Состояние не загружено' });
+    
     const issues = validateDraft(draft);
     const errors = issues.filter(i => i.level === 'error');
     if (errors.length) return this.post({ type: 'saveError', issues });
-    saveAll(this.state.paths, draft, { config: this.state.unknownConfigKeys, layout: this.state.unknownLayoutKeys });
-    // Перезагружаем - чтобы поймать последствия YAML-сериализации
-    await this.refresh();
-    this.post({ type: 'saved', ok: true, warnings: issues.filter(i => i.level === 'warning').map(i => i.message) });
+
+    let writeYfm = false;
+
+    if (!this.state.isNative) {
+      const choice = await vscode.window.showWarningMessage(
+        'Настройки проекта не найдены в .yfm. Дополнить .yfm новыми понятиями?',
+        { modal: true },
+        'Дополнить yfm',
+        'Только файлы конфигурации'
+      );
+      
+      if (choice === 'Дополнить yfm') {
+        writeYfm = true;
+      } else if (choice !== 'Только файлы конфигурации') {
+        // Если пользователь нажал Esc или закрыл окно — сообщаем фронтенду
+        this.post({ type: 'error', message: 'Сохранение отменено пользователем' });
+        return; 
+      }
+    }
+
+    try {
+      saveAll(this.state.paths, draft, { 
+        config: this.state.unknownConfigKeys, 
+        layout: this.state.unknownLayoutKeys 
+      });
+
+      if (writeYfm) {
+        this.updateYfm();
+      }
+
+      await this.refresh(); // Перечитываем с диска (отправит init)
+      
+      // Отправляем подтверждение
+      this.post({ type: 'saved', ok: true, warnings: issues.filter(i => i.level === 'warning').map(i => i.message) });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.post({ type: 'error', message: `Ошибка сохранения: ${msg}` });
+    }
+  }
+
+  private updateYfm() {
+    if (!this.state) return;
+    const root = this.state.paths.projectRoot;
+    const yfmNames = ['.yfm', 'yfm-config.yaml', 'yfm-config.yml'];
+    let yfmPath = '';
+    for (const name of yfmNames) {
+      const p = path.join(root, name);
+      if (fs.existsSync(p)) { yfmPath = p; break; }
+    }
+    if (!yfmPath) yfmPath = path.join(root, '.yfm'); // Создаем если нет
+
+    let yfm: any = {};
+    if (fs.existsSync(yfmPath)) {
+      try { yfm = yaml.load(fs.readFileSync(yfmPath, 'utf8')) || {}; } catch (e) {}
+    }
+
+    // Формируем пути относительного корня проекта
+    const rel = (p: string) => path.relative(root, p).replace(/\\/g, '/');
+    const paths = this.state.paths;
+
+    yfm.py_feature_map = {
+      projectName: this.state.projectName,
+      config: rel(paths.configPath),
+      layout: rel(paths.layoutPath),
+      fields: rel(paths.fieldsPath),
+      dimensions: rel(paths.dimensionsPath),
+      catalog: rel(paths.catalogPath),
+    };
+
+    fs.writeFileSync(yfmPath, yaml.dump(yfm, { lineWidth: 120, noRefs: true }), 'utf8');
   }
 
   private async openFile(file: 'config' | 'layout' | 'fields' | 'dimensions' | 'catalog'): Promise<void> {

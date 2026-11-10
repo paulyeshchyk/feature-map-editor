@@ -42,6 +42,8 @@ export interface EditorState {
   unknownConfigKeys: Record<string, unknown>;
   unknownLayoutKeys: Record<string, unknown>;
   catalog: CatalogSnapshot | null;
+  projectName: string;
+  isNative: boolean;
   paths: {
     projectRoot: string;
     docsDir: string;
