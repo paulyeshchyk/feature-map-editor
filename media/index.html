@@ -45,11 +45,24 @@
     </section>
 
     <section data-tab-content="axes" hidden>
-      <h2>Оси и роли</h2>
-      <label>Row dimension <select id="sel-row"></select></label>
-      <label>Column dimension <select id="sel-col"></select></label>
-      <h3>Strip dimensions</h3>
-      <div id="strips-list"></div>
+      <div class="section-head">
+        <h2>Оси и роли</h2>
+      </div>
+      
+      <div class="dim-field-row">
+        <label>Row dimension:</label>
+        <select id="sel-row"></select>
+      </div>
+      
+      <div class="dim-field-row">
+        <label>Column dimension:</label>
+        <select id="sel-col"></select>
+      </div>
+
+      <div class="dim-field-row" style="align-items: flex-start; margin-top: 16px;">
+        <label style="padding-top: 2px;">Strips:</label>
+        <div id="strips-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
     </section>
 
     <section data-tab-content="filters" hidden>

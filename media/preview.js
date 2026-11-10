@@ -93,7 +93,7 @@ export function renderPreview() {
     return `<span class="dim-badge ${roleClass}">${escapeHtml(d)} (${roleText})</span>`;
   }).join('');
 
-  // --- Сборка (используем dim-card для единого стиля) ---
+  // --- Сборка ---
   container.innerHTML = `
     <div class="dim-card is-open" style="margin-top: 8px;">
       <div class="dim-header" style="cursor: default;">
@@ -104,9 +104,7 @@ export function renderPreview() {
         <div style="margin-bottom: 16px;">
           ${stripsHtml}
         </div>
-
         ${gridHtml}
-
         <div class="schema-legend" style="margin-top: 16px;">
           ${legendBadges}
         </div>

@@ -27,12 +27,12 @@ export function renderDimensions() {
 
     // --- Содержимое вкладки General ---
     const generalHtml = `
-      <div class="dim-field-row" style="margin-bottom: 12px;" title="${t('hints.dimTitle')}">
-        <label style="width: 100px; flex-shrink: 0;">Title:</label>
+      <div class="dim-field-row" title="${t('hints.dimTitle')}">
+        <label>Title:</label>
         <input data-f="title" value="${escapeHtml(def.title || '')}" placeholder="(опционально, для UI)">
       </div>
-      <div class="dim-field-row" style="margin-bottom: 12px;" title="${t('hints.dimMap')}">
-        <label for="field-${escapeHtml(dimName)}" style="width: 100px; flex-shrink: 0;">dimToFieldMap:</label>
+      <div class="dim-field-row" title="${t('hints.dimMap')}">
+        <label for="field-${escapeHtml(dimName)}">dimToFieldMap:</label>
         <input id="field-${escapeHtml(dimName)}"
                data-cfg-map="${escapeHtml(dimName)}"
                value="${escapeHtml(fieldVal)}"

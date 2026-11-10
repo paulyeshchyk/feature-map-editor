@@ -128,8 +128,51 @@
   gap: 8px;
   margin-bottom: 12px;
   font-size: 13px;
-  line-height: 1;
+  line-height: 1.4;
 }
+
+/* Универсальный лейбл */
+.dim-field-row > label:first-child,
+.dim-field-row > span:first-child {
+  width: 150px; /* Достаточно для самого длинного лейбла */
+  flex-shrink: 0;
+  text-align: right;
+  margin: 0;
+  padding: 0;
+  padding-right: 8px; /* Отступ до инпута */
+  display: inline-block;
+}
+
+.dim-field-row input,
+.dim-field-row select {
+  flex: 1;
+  max-width: 400px;
+  margin: 0;
+}
+
+/* Выравнивание чекбоксов в Axes */
+#strips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#strips-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0; /* Убираем стандартный отступ label */
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+#strips-list input[type="checkbox"] {
+  margin: 0; /* Убираем стандартные отступы браузера */
+  cursor: pointer;
+}
+
 .dim-field-row label {
   flex-shrink: 0;
   margin: 0;
@@ -138,11 +181,6 @@
   display: inline-flex;
   align-items: center;
   padding-top: 1px;
-}
-.dim-field-row input {
-  flex: 1;
-  max-width: 400px;
-  margin: 0;
 }
 
 .dim-actions {

@@ -15,7 +15,6 @@ export function renderValidation() {
   }
 
   host.innerHTML = warnings.map(w => {
-    // Определяем тип: ошибка или предупреждение
     const isWarn = w.includes('fallback') || w.includes('не задано') || w.includes('warning') || w.includes('Внимание');
     return `<li class="${isWarn ? 'warning' : 'error'}">
       ${escapeHtml(w)}
