@@ -3,8 +3,7 @@ import { $, escapeHtml } from './utils.js';
 
 export function renderPreview() {
   const container = $('#preview-schema-container');
-  const warningsHost = $('#preview-warnings');
-  if (!container || !warningsHost) return;
+  if (!container) return;
 
   if (!state.draft) {
     container.innerHTML = '<p class="muted">Ожидание загрузки данных…</p>';
@@ -25,20 +24,20 @@ export function renderPreview() {
     stripsHtml = strips.map(dimName => {
       const def = dims[dimName];
       const items = def?.items || {};
-      const slugs = Object.keys(items).slice(0, 5); // Берем первые 5 для примера
+      const slugs = Object.keys(items).slice(0, 5);
       const hasMore = Object.keys(items).length > 5;
 
       const chips = slugs.map(s =>
-        `<span class="schema-chip">${escapeHtml(items[s].title || s)}</span>`
+        `<span class="dim-badge">${escapeHtml(items[s].title || s)}</span>`
       ).join('');
 
-      const more = hasMore ? `<span class="schema-chip">…</span>` : '';
-      const empty = slugs.length === 0 ? `<span class="schema-chip empty">(пусто)</span>` : '';
+      const more = hasMore ? `<span class="dim-badge">…</span>` : '';
+      const empty = slugs.length === 0 ? `<span class="dim-badge empty">(пусто)</span>` : '';
 
       return `
         <div class="schema-strip">
           <span class="schema-strip-label">${escapeHtml(dimName)}:</span>
-          ${chips}${more}${empty}
+          <div style="display:flex; gap:4px; flex-wrap:wrap;">${chips}${more}${empty}</div>
         </div>`;
     }).join('');
   }
@@ -54,7 +53,6 @@ export function renderPreview() {
     const rowItems = Object.keys(dims[rowDim].items || {}).slice(0, 3);
     const colItems = Object.keys(dims[colDim].items || {}).slice(0, 3);
 
-    // Заголовки колонок
     let thead = `<tr><th class="corner"></th>`;
     colItems.forEach(c => {
       thead += `<th>${escapeHtml(dims[colDim].items[c]?.title || c)}</th>`;
@@ -62,12 +60,10 @@ export function renderPreview() {
     if (Object.keys(dims[colDim].items || {}).length > 3) thead += `<th>…</th>`;
     thead += `</tr>`;
 
-    // Тело таблицы
     let tbody = '';
     rowItems.forEach(r => {
       tbody += `<tr><th>${escapeHtml(dims[rowDim].items[r]?.title || r)}</th>`;
       colItems.forEach((c, i) => {
-        // Имитируем наличие модулей (например, в первой ячейке)
         const hasData = r === rowItems[0] && c === colItems[0];
         tbody += `<td><div class="schema-cell ${hasData ? 'has-data' : ''}">${hasData ? '● ●' : '·'}</div></td>`;
       });
@@ -86,7 +82,7 @@ export function renderPreview() {
     `;
   }
 
-  // --- 3. Легенда (Все размерности) ---
+  // --- 3. Легенда ---
   const legendBadges = dimNames.map(d => {
     let roleClass = 'role-none';
     let roleText = 'unused';
@@ -94,41 +90,27 @@ export function renderPreview() {
     else if (d === colDim) { roleClass = 'role-col'; roleText = 'col'; }
     else if (strips.includes(d)) { roleClass = 'role-strip'; roleText = 'strip'; }
 
-    return `<span class="legend-badge ${roleClass}">${escapeHtml(d)} (${roleText})</span>`;
+    return `<span class="dim-badge ${roleClass}">${escapeHtml(d)} (${roleText})</span>`;
   }).join('');
 
-  // --- Сборка ---
+  // --- Сборка (используем dim-card для единого стиля) ---
   container.innerHTML = `
-    <div class="schema-wrapper">
-      <div class="schema-title">
-        ${escapeHtml(cfg.title || 'Feature Map')} 
-        <span style="font-size: 11px; font-weight: normal; opacity: 0.6;">(${escapeHtml(cfg.sectionType || 'Page')})</span>
+    <div class="dim-card is-open" style="margin-top: 8px;">
+      <div class="dim-header" style="cursor: default;">
+        <span class="dim-name" style="font-size: 14px;">${escapeHtml(cfg.title || 'Feature Map')}</span>
+        <span class="muted" style="font-size: 11px; margin-left: 8px;">(${escapeHtml(cfg.sectionType || 'Page')})</span>
       </div>
-      
-      <!-- Фильтры -->
-      <div style="margin-bottom: 16px;">
-        ${stripsHtml}
-      </div>
+      <div class="dim-body">
+        <div style="margin-bottom: 16px;">
+          ${stripsHtml}
+        </div>
 
-      <!-- Сетка -->
-      ${gridHtml}
+        ${gridHtml}
 
-      <!-- Легенда -->
-      <div class="schema-legend">
-        ${legendBadges}
+        <div class="schema-legend" style="margin-top: 16px;">
+          ${legendBadges}
+        </div>
       </div>
     </div>
   `;
-
-  // --- 4. Предупреждения (Warnings) ---
-  const warnings = state.warnings || [];
-  if (warnings.length === 0) {
-    warningsHost.innerHTML = `<li class="muted">Ошибок не обнаружено.</li>`;
-  } else {
-    warningsHost.innerHTML = warnings.map(w => {
-      // Простая эвристика: если начинается с ⚠ или содержит слово "fallback" — это warning, иначе error
-      const isWarn = w.includes('fallback') || w.includes('не задано') || w.includes('warning');
-      return `<li class="${isWarn ? 'warning' : 'error'}">${escapeHtml(w)}</li>`;
-    }).join('');
-  }
 }

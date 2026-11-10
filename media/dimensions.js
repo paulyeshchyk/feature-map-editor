@@ -1,7 +1,7 @@
+import { t } from './i18n.js';
+import { dimTabs, expandedDims, state } from './state.js';
 import { $, escapeHtml } from './utils.js';
 import { askUser, confirmAsync, post } from './vscode-api.js';
-import { state, expandedDims, dimTabs } from './state.js';
-
 
 export function renderDimensions() {
   const host = $('#dims-list');
@@ -18,8 +18,8 @@ export function renderDimensions() {
   }
 
   for (const [dimName, def] of entries) {
-    const items  = def.items || {};
-    const count  = Object.keys(items).length;
+    const items = def.items || {};
+    const count = Object.keys(items).length;
     const isOpen = expandedDims.has(dimName);
     const fieldVal = cfg.dimToFieldMap[dimName] ?? '';
     const cols = def.columns || [];
@@ -27,11 +27,11 @@ export function renderDimensions() {
 
     // --- Содержимое вкладки General ---
     const generalHtml = `
-      <div class="dim-field-row" style="margin-bottom: 12px;">
+      <div class="dim-field-row" style="margin-bottom: 12px;" title="${t('hints.dimTitle')}">
         <label style="width: 100px; flex-shrink: 0;">Title:</label>
         <input data-f="title" value="${escapeHtml(def.title || '')}" placeholder="(опционально, для UI)">
       </div>
-      <div class="dim-field-row" style="margin-bottom: 12px;">
+      <div class="dim-field-row" style="margin-bottom: 12px;" title="${t('hints.dimMap')}">
         <label for="field-${escapeHtml(dimName)}" style="width: 100px; flex-shrink: 0;">dimToFieldMap:</label>
         <input id="field-${escapeHtml(dimName)}"
                data-cfg-map="${escapeHtml(dimName)}"
@@ -42,22 +42,28 @@ export function renderDimensions() {
 
     // --- Содержимое вкладки Columns ---
     const colsMarkup = cols.length === 0
-      ? '<p class="muted">Нет колонок. Добавьте колонки для отображения таблиц в render-modules.</p>'
+      ? '<p class="muted">Нет колонок. Добавьте колонки для отображения таблиц.</p>'
       : `<table class="cols-table">
-          <thead><tr><th class="col-actions"></th><th>label</th><th>field</th></tr></thead>
+          <thead><tr>
+            <th class="col-actions"></th>
+            <th title="${t('hints.colLabel')}">label</th>
+            <th title="${t('hints.colField')}">field</th>
+            <th class="col-grow"></th>
+          </tr></thead>
           <tbody>
             ${cols.map((c, i) => `
               <tr data-col-idx="${i}">
                 <td class="col-actions">
                   <button class="small danger" data-act="del-col" data-idx="${i}" title="Удалить колонку">🗑</button>
                 </td>
-                <td><input data-col="label" value="${escapeHtml(c.label || '')}" placeholder="ID"></td>
-                <td><input data-col="field" value="${escapeHtml(c.field || '')}" placeholder="id"></td>
+                <td><input data-col="label" value="${escapeHtml(c.label || '')}" placeholder="ID" title="${t('hints.colLabel')}"></td>
+                <td><input data-col="field" value="${escapeHtml(c.field || '')}" placeholder="id" title="${t('hints.colField')}"></td>
+                <td class="col-grow"></td>
               </tr>
             `).join('')}
           </tbody>
         </table>`;
-    
+
     const colsHtml = `
       ${colsMarkup}
       <div style="margin-top: 8px;">
@@ -71,9 +77,10 @@ export function renderDimensions() {
       : `<table class="items-table">
           <thead><tr>
             <th class="col-actions"></th>
-            <th>slug</th>
-            <th>title</th>
-            <th>dir</th>
+            <th title="${t('hints.itemSlug')}">slug</th>
+            <th title="${t('hints.itemTitle')}">title</th>
+            <th title="${t('hints.itemDir')}">dir</th>
+            <th class="col-grow"></th>
           </tr></thead>
           <tbody>
             ${Object.entries(items).map(([slug, item]) => `
@@ -81,10 +88,10 @@ export function renderDimensions() {
                 <td class="col-actions">
                   <button class="small danger" data-act="del-item" title="Удалить значение">🗑</button>
                 </td>
-                <td><input data-field="__slug" value="${escapeHtml(slug)}"
-                           spellcheck="false" autocomplete="off"></td>
-                <td><input data-field="title" value="${escapeHtml(item.title ?? '')}"></td>
-                <td><input data-field="dir" value="${escapeHtml(item.dir ?? '')}" placeholder="(опционально)"></td>
+                <td><input data-field="__slug" value="${escapeHtml(slug)}" spellcheck="false" autocomplete="off" title="${t('hints.itemSlug')}"></td>
+                <td><input data-field="title" value="${escapeHtml(item.title ?? '')}" title="${t('hints.itemTitle')}"></td>
+                <td><input data-field="dir" value="${escapeHtml(item.dir ?? '')}" placeholder="(опционально)" title="${t('hints.itemDir')}"></td>
+                <td class="col-grow"></td>
               </tr>`).join('')}
           </tbody>
         </table>`;
@@ -99,7 +106,7 @@ export function renderDimensions() {
     const card = document.createElement('div');
     card.className = 'dim-card' + (isOpen ? ' is-open' : '');
     card.dataset.dim = dimName;
-    
+
     card.innerHTML = `
       <div class="dim-header" role="button" tabindex="0" aria-expanded="${isOpen}">
         <span class="dim-chevron">▶</span>
@@ -141,9 +148,9 @@ export function attachDimensionsHandlers() {
       const card = subtabBtn.closest('.dim-card');
       const dim = card.dataset.dim;
       const tab = subtabBtn.dataset.subtab;
-      
+
       dimTabs.set(dim, tab);
-      
+
       // Меняем классы без полного ре-рендера
       card.querySelectorAll('.dim-subtab-btn').forEach(btn => btn.classList.toggle('active', btn === subtabBtn));
       card.querySelectorAll('.dim-subtab-content').forEach(content => {
@@ -156,7 +163,7 @@ export function attachDimensionsHandlers() {
     const header = e.target.closest('.dim-header');
     if (header && !e.target.closest('button')) {
       const card = header.closest('.dim-card');
-      const dim  = card.dataset.dim;
+      const dim = card.dataset.dim;
       const open = expandedDims.has(dim);
       if (open) expandedDims.delete(dim); else expandedDims.add(dim);
       card.classList.toggle('is-open', !open);
@@ -167,12 +174,12 @@ export function attachDimensionsHandlers() {
     // 3. Кнопки действий
     const t = e.target.closest('button');
     if (!t) return;
-    const act  = t.dataset.act;
+    const act = t.dataset.act;
     const card = t.closest('.dim-card');
-    const dim  = card?.dataset.dim;
+    const dim = card?.dataset.dim;
 
-    if (act === 'add-item')      await onAddItem(dim);
-    else if (act === 'del-dim')  await onDeleteDim(dim);
+    if (act === 'add-item') await onAddItem(dim);
+    else if (act === 'del-dim') await onDeleteDim(dim);
     else if (act === 'del-item') onDeleteItem(dim, t.closest('tr')?.dataset.slug);
     else if (act === 'rename-dim') await onRenameDim(dim);
     else if (act === 'add-col') {
@@ -250,7 +257,7 @@ async function onRenameDim(oldName) {
     return;
   }
 
-  const cfg  = state.draft.config;
+  const cfg = state.draft.config;
   const dims = state.draft.dimensions;
 
   // 1. Переименовать ключ с сохранением порядка
@@ -261,7 +268,7 @@ async function onRenameDim(oldName) {
   state.draft.dimensions = ordered;
 
   // 2. config.*
-  if (cfg.rowDimension    === oldName) cfg.rowDimension    = name;
+  if (cfg.rowDimension === oldName) cfg.rowDimension = name;
   if (cfg.columnDimension === oldName) cfg.columnDimension = name;
   if (Array.isArray(cfg.stripDimensions)) {
     cfg.stripDimensions = cfg.stripDimensions.map(x => x === oldName ? name : x);
@@ -307,7 +314,7 @@ async function onDeleteDim(dim) {
   if (!ok) return;
 
   const cfg = state.draft.config;
-  if (cfg.rowDimension    === dim) cfg.rowDimension    = '';
+  if (cfg.rowDimension === dim) cfg.rowDimension = '';
   if (cfg.columnDimension === dim) cfg.columnDimension = '';
   if (Array.isArray(cfg.stripDimensions)) {
     cfg.stripDimensions = cfg.stripDimensions.filter(x => x !== dim);

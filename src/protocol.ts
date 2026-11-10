@@ -44,6 +44,7 @@ export interface EditorState {
   catalog: CatalogSnapshot | null;
   projectName: string;
   isNative: boolean;
+  uiLang: string;
   paths: {
     projectRoot: string;
     docsDir: string;

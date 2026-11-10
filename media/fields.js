@@ -1,5 +1,6 @@
+import { t } from './i18n.js';
+import { expandedFields, state } from './state.js';
 import { $, escapeHtml } from './utils.js';
-import { state, expandedFields } from './state.js';
 import { askUser, confirmAsync, post } from './vscode-api.js';
 
 export function renderFields() {
@@ -19,19 +20,17 @@ export function renderFields() {
   for (const [fieldKey, def] of entries) {
     const isOpen = expandedFields.has(fieldKey);
     const dim = def.dimension || '';
-    
-    // Бейджи УДАЛЕНЫ
 
     const dimOptions = dimNames.map(d =>
       `<option value="${escapeHtml(d)}" ${d === dim ? 'selected' : ''}>${escapeHtml(d)}</option>`
     ).join('');
     const emptyDimOpt = `<option value="" ${!dim ? 'selected' : ''}>(не связана)</option>`;
-    
+
     let pathHtml = '';
     if (def.source === 'path' || def.source === 'frontmatter-or-path') {
       const path = def.path || {};
       const isRules = Array.isArray(path.rules);
-      
+
       pathHtml = `
         <div class="path-config" style="margin-top: 12px; padding: 12px; border: 1px solid var(--vscode-panel-border); border-radius: 4px; background: rgba(255,255,255,0.02);">
           <div style="margin-bottom: 12px; display: flex; gap: 16px;">
@@ -39,18 +38,32 @@ export function renderFields() {
             <label style="margin:0;"><input type="radio" name="path-type-${escapeHtml(fieldKey)}" value="rules" ${isRules ? 'checked' : ''}> Rules (словарь)</label>
           </div>
           <div class="path-regex" style="display: ${isRules ? 'none' : 'flex'}; flex-direction: column; gap: 8px;">
-            <label class="dim-field-row" style="margin:0;"><span style="width: 100px;">Regex:</span> <input data-path="regex" value="${escapeHtml(path.regex || '')}" placeholder="Раздел(\\d+)"></label>
-            <label class="dim-field-row" style="margin:0;"><span style="width: 100px;">Template:</span> <input data-path="template" value="${escapeHtml(path.template || '')}" placeholder="s$1"></label>
+            <label class="dim-field-row" style="margin:0;">
+              <span style="width: 100px;" title="${t('hints.pathRegex')}">Regex:</span> 
+              <input data-path="regex" value="${escapeHtml(path.regex || '')}" placeholder="Раздел(\\d+)" title="${t('hints.pathRegex')}">
+            </label>
+            <label class="dim-field-row" style="margin:0;">
+              <span style="width: 100px;" title="${t('hints.pathTemplate')}">Template:</span> 
+              <input data-path="template" value="${escapeHtml(path.template || '')}" placeholder="s$1" title="${t('hints.pathTemplate')}">
+            </label>
           </div>
           <div class="path-rules" style="display: ${isRules ? 'block' : 'none'};">
             <table class="items-table" style="width: 100%;">
-              <thead><tr><th>Regex</th><th>Slug</th><th class="col-actions"></th></tr></thead>
+              <thead><tr>
+                <th class="col-actions"></th>
+                <th title="${t('hints.pathRuleRegex')}">Regex</th>
+                <th title="${t('hints.pathRuleSlug')}">Slug</th>
+                <th class="col-grow"></th>
+              </tr></thead>
               <tbody>
                 ${(path.rules || []).map((r, i) => `
                   <tr data-rule-idx="${i}">
-                    <td><input data-rule="regex" value="${escapeHtml(r.regex || '')}" placeholder="АРМ\\s*Менеджера"></td>
-                    <td><input data-rule="slug" value="${escapeHtml(r.slug || '')}" placeholder="manager"></td>
-                    <td class="col-actions"><button class="small danger" data-act="del-rule" data-idx="${i}">🗑</button></td>
+                    <td class="col-actions">
+                      <button class="small danger" data-act="del-rule" data-idx="${i}" title="Удалить правило">🗑</button>
+                    </td>
+                    <td><input data-rule="regex" value="${escapeHtml(r.regex || '')}" placeholder="АРМ\\s*Менеджера" title="${t('hints.pathRuleRegex')}"></td>
+                    <td><input data-rule="slug" value="${escapeHtml(r.slug || '')}" placeholder="manager" title="${t('hints.pathRuleSlug')}"></td>
+                    <td class="col-grow"></td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -65,7 +78,6 @@ export function renderFields() {
     card.className = 'dim-card' + (isOpen ? ' is-open' : '');
     card.dataset.field = fieldKey;
 
-    // НОВАЯ ШАПКА С КНОПКАМИ
     card.innerHTML = `
       <div class="dim-header" role="button" tabindex="0" aria-expanded="${isOpen}">
         <span class="dim-chevron">▶</span>
@@ -77,26 +89,26 @@ export function renderFields() {
       </div>
       <div class="dim-body">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-bottom: 12px;">
-          <label class="dim-field-row" style="margin:0;">
+          <label class="dim-field-row" style="margin:0;" title="${t('hints.fieldDim')}">
             <span style="width: 120px;">Dimension:</span>
             <select data-f="dimension">${emptyDimOpt}${dimOptions}</select>
           </label>
-          <label class="dim-field-row" style="margin:0;">
+          <label class="dim-field-row" style="margin:0;" title="${t('hints.fieldDimField')}">
             <span style="width: 120px;">dimField:</span>
             <input data-f="dimField" value="${escapeHtml(def.dimField || '')}" placeholder="sections">
           </label>
-          <label class="dim-field-row" style="margin:0;">
+          <label class="dim-field-row" style="margin:0;" title="${t('hints.fieldFrontmatter')}">
             <span style="width: 120px;">frontmatterKey:</span>
             <input data-f="frontmatterKey" value="${escapeHtml(def.frontmatterKey || '')}" placeholder="(совпадает)">
           </label>
-          <label class="dim-field-row" style="margin:0;">
+          <label class="dim-field-row" style="margin:0;" title="${t('hints.fieldKind')}">
             <span style="width: 120px;">Kind:</span>
             <select data-f="kind">
               <option value="multi" ${def.kind === 'multi' ? 'selected' : ''}>multi</option>
               <option value="scalar" ${(!def.kind || def.kind === 'scalar') ? 'selected' : ''}>scalar</option>
             </select>
           </label>
-          <label class="dim-field-row" style="margin:0;">
+          <label class="dim-field-row" style="margin:0;" title="${t('hints.fieldSource')}">
             <span style="width: 120px;">Source:</span>
             <select data-f="source">
               <option value="frontmatter" ${(!def.source || def.source === 'frontmatter') ? 'selected' : ''}>frontmatter</option>
@@ -104,7 +116,7 @@ export function renderFields() {
               <option value="frontmatter-or-path" ${def.source === 'frontmatter-or-path' ? 'selected' : ''}>frontmatter-or-path</option>
             </select>
           </label>
-          <label class="dim-field-row" style="margin:0;">
+          <label class="dim-field-row" style="margin:0;" title="${t('hints.fieldFormat')}">
             <span style="width: 120px;">Format:</span>
             <select data-f="format">
               <option value="" ${!def.format ? 'selected' : ''}>auto</option>
@@ -228,7 +240,7 @@ export function attachFieldsHandlers() {
     if (e.target.dataset.f) {
       const f = e.target.dataset.f;
       const val = e.target.value.trim();
-      
+
       if (f === 'kind') {
         def.kind = val;
       } else if (f === 'source') {
@@ -244,7 +256,7 @@ export function attachFieldsHandlers() {
       }
     }
   });
-  
+
   host.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const header = e.target.closest('.dim-header');

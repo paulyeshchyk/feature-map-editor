@@ -2,7 +2,7 @@
   "name": "feature-map-editor",
   "displayName": "Feature Map Editor",
   "description": "Редактор конфигурации модуля emit-feature-map",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "paulyestchick",
   "license": "MIT",
   "engines": {

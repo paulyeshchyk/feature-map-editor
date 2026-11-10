@@ -1,55 +1,36 @@
 /* ── Схема Feature Map ─────────────────────────────────── */
-.schema-wrapper {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 6px;
-  padding: 16px;
-  background: var(--vscode-editor-background);
-  margin-bottom: 24px;
-}
-
 .schema-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: var(--vscode-foreground);
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* ── Strips (Фильтры) ──────────────────────────────────── */
 .schema-strip {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid var(--vscode-panel-border);
-  flex-wrap: wrap;
+  border-bottom: 1px dashed var(--vscode-panel-border);
+}
+.schema-strip:last-child {
+  border-bottom: none;
 }
 .schema-strip-label {
   font-weight: 600;
-  min-width: 80px;
+  min-width: 90px;
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
-}
-.schema-chip {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: var(--vscode-editorWidget-background);
-  border: 1px solid var(--vscode-panel-border);
-  font-size: 11px;
-  color: var(--vscode-foreground);
-}
-.schema-chip.empty {
-  opacity: 0.5;
-  font-style: italic;
+  padding-top: 2px;
 }
 
 /* ── Grid (Таблица) ────────────────────────────────────── */
 .schema-table-container {
   overflow-x: auto;
-  margin-top: 16px;
+  margin-top: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
 }
 .schema-table {
   border-collapse: collapse;
@@ -59,10 +40,10 @@
 .schema-table th,
 .schema-table td {
   border: 1px solid var(--vscode-panel-border);
-  padding: 8px;
+  padding: 6px 8px;
   text-align: center;
   vertical-align: middle;
-  min-width: 60px;
+  min-width: 80px;
 }
 .schema-table th {
   background: var(--vscode-editorGroupHeader-tabsBackground, rgba(128, 128, 128, 0.1));
@@ -72,6 +53,7 @@
 .schema-table th.corner {
   background: transparent;
   border: none;
+  width: 100px; 
 }
 .schema-cell {
   color: var(--vscode-descriptionForeground);
@@ -89,39 +71,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 16px;
-}
-.legend-badge {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  border: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-editorWidget-background);
-}
-.legend-badge.role-row   { border-color: #c97c2d; color: #c97c2d; }
-.legend-badge.role-col   { border-color: #2d7fc9; color: #2d7fc9; }
-.legend-badge.role-strip { border-color: #7c3ac9; color: #7c3ac9; }
-.legend-badge.role-none  { opacity: 0.5; }
-
-/* ── Ошибки и предупреждения ───────────────────────────── */
-.issue-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.issue-list li {
-  padding: 8px 12px;
-  margin-bottom: 4px;
-  border-radius: 4px;
-  background: var(--vscode-editorWidget-background);
-  border-left: 3px solid var(--vscode-panel-border);
-  font-size: 13px;
-}
-.issue-list li.error {
-  border-left-color: var(--vscode-errorForeground, #c00);
-  background: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.1));
-}
-.issue-list li.warning {
-  border-left-color: #d7ba7d;
-  background: var(--vscode-inputValidation-warningBackground, rgba(255, 255, 0, 0.1));
 }

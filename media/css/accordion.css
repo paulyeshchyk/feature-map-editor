@@ -151,3 +151,19 @@
   margin-top: 10px;
   justify-content: space-between;
 }
+
+/* Запрещаем блоку кнопок и самим кнопкам сжиматься в шапке */
+.dim-header-actions {
+  flex-shrink: 0; /* Блок с кнопками не должен сжиматься */
+}
+
+.dim-header-actions button {
+  flex-shrink: 0;    /* Кнопки не должны сжиматься */
+  min-width: 24px;   /* Минимальная ширина для иконки */
+  min-height: 24px;  /* Минимальная высота */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;        /* Убираем лишние отступы, чтобы иконка была ровно по центру */
+  font-size: 14px;
+}

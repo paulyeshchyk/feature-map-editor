@@ -94,6 +94,7 @@ export class EditorPanel {
 
     // Вся логика сборки стейта теперь внутри loadAll
     this.state = loadAll(project);
+    this.state.uiLang = vscode.env.language;
 
     this.post({ type: 'init', state: this.state });
   }

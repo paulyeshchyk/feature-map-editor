@@ -15,6 +15,7 @@
       <button data-tab="axes">Axes &amp; Roles</button>
       <button data-tab="filters">Filters</button>
       <button data-tab="preview">Preview</button>
+      <button data-tab="validation">Validation</button>
       <button data-tab="settings">Settings</button>
     </nav>
     <div class="actions">
@@ -27,19 +28,20 @@
   </header>
 
   <main class="content">
-    <section data-tab-content="fields" hidden>
-      <div class="section-head">
-        <h2>Поля (Fields)</h2>
-        <button id="btn-add-field" class="small">+ Добавить поле</button>
-      </div>
-      <div id="fields-list"></div>
-    </section>
     <section data-tab-content="dimensions">
       <div class="section-head">
         <h2>Размерности</h2>
         <button id="btn-add-dim" class="small">+ Добавить размерность</button>
       </div>
       <div id="dims-list"></div>
+    </section>
+
+    <section data-tab-content="fields" hidden>
+      <div class="section-head">
+        <h2>Поля (Fields)</h2>
+        <button id="btn-add-field" class="small">+ Добавить поле</button>
+      </div>
+      <div id="fields-list"></div>
     </section>
 
     <section data-tab-content="axes" hidden>
@@ -52,16 +54,26 @@
 
     <section data-tab-content="filters" hidden>
       <h2>Пустые значения (<code>__empty__</code>)</h2>
-      <table id="empty-table"><thead><tr>
-        <th>Размерность</th><th>Включать</th><th>Label</th>
-      </tr></thead><tbody></tbody></table>
+      <table id="empty-table">
+        <thead>
+          <tr><th>Размерность</th><th>Включать</th><th>Label</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
 
     <section data-tab-content="preview" hidden>
-      <h2>Предпросмотр</h2>
-      <div id="preview-summary"></div>
-      <h3>Warnings</h3>
-      <ul id="preview-warnings"></ul>
+      <div class="section-head">
+        <h2>Схематичный предпросмотр</h2>
+      </div>
+      <div id="preview-schema-container"></div>
+    </section>
+
+    <section data-tab-content="validation" hidden>
+      <div class="section-head">
+        <h2>Проверка конфигурации</h2>
+      </div>
+      <ul id="validation-list" class="issue-list"></ul>
     </section>
 
     <section data-tab-content="settings" hidden>
@@ -69,19 +81,6 @@
       <div id="settings-form"></div>
     </section>
   </main>
-
-  <section data-tab-content="preview" hidden>
-    <div class="section-head">
-      <h2>Схематичный предпросмотр</h2>
-    </div>
-    
-    <div id="preview-schema-container"></div>
-    
-    <div id="preview-issues" style="margin-top: 32px;">
-      <h3 style="font-size: 14px; margin-bottom: 8px;">Предупреждения валидации</h3>
-      <ul id="preview-warnings" class="issue-list"></ul>
-    </div>
-  </section>
 
   <script type="module" src="{{script}}"></script>
 </body>

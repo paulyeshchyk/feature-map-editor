@@ -221,7 +221,6 @@ export function loadAll(project: ProjectConfig): EditorState {
     ...catalog.warnings
   ];
 
-  // Если fallback — добавляем предупреждение на уровне данных, а не в UI
   if (!isNative) {
     warnings.unshift("⚠ Внимание: настройки загружены в fallback-режиме. В файле .yfm не найдена секция 'py_feature_map'.");
   }
@@ -231,12 +230,14 @@ export function loadAll(project: ProjectConfig): EditorState {
     unknownConfigKeys: config.unknown,
     unknownLayoutKeys: layout.unknown,
     catalog: catalog.value,
-    projectName, // <-- берем из project
-    isNative,    // <-- берем из project
+    projectName,
+    isNative,
+    uiLang: 'ru',
     paths,
     warnings,    
   };
 }
+
 export interface SaveResult { written: string[]; }
 
 export function saveAll(paths: ResolvedPaths, draft: EditorDraft, unknown: { config: Record<string, unknown>; layout: Record<string, unknown> }): SaveResult {
