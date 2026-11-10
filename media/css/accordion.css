@@ -1,0 +1,207 @@
+/* Контейнеры списков (верхняя граница, чтобы список был визуально закрыт) */
+#dims-list, #fields-list {
+  border-top: 1px solid var(--vscode-panel-border);
+  padding: 4px 0; /* Небольшой отступ, чтобы раскрытые карточки не прилипали к краям */
+}
+
+/* ── Базовое состояние (свернуто) ──────────────────────── */
+.dim-card {
+  /* Прозрачная рамка по умолчанию, чтобы избежать сдвига при раскрытии */
+  border: 1px solid transparent; 
+  border-bottom: 1px solid var(--vscode-panel-border);
+  border-radius: 0;
+  margin: 0;
+  padding: 0;
+  transition: border-color 0.15s, background-color 0.15s, margin 0.15s;
+}
+
+/* ── Раскрытое состояние ───────────────────────────────── */
+.dim-card.is-open {
+  /* Обозначаем контур */
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  /* Отделяем от соседей */
+  margin: 8px 0; 
+  /* Убираем общий фон, чтобы стилизовать шапку и тело отдельно */
+  background: transparent;
+}
+
+/* Шапка раскрытой карточки (темнее) */
+.dim-card.is-open .dim-header {
+  /* Используем фон заголовков вкладок (обычно темнее/контрастнее) */
+  background: var(--vscode-editorGroupHeader-tabsBackground, rgba(128, 128, 128, 0.1));
+  border-radius: 4px 4px 0 0;
+}
+
+/* Тело раскрытой карточки (светлее) */
+.dim-card.is-open .dim-body {
+  /* Фон виджета (в темных темах обычно светлее фона редактора) */
+  background: var(--vscode-editor-background); /*var(--vscode-editorWidget-background, var(--vscode-editor-background));*/
+  border-radius: 0 0 4px 4px;
+  /* Нижняя граница для аккуратного завершения карточки */
+  border-top: 1px solid var(--vscode-panel-border);
+  border-bottom: none;
+}
+
+/* ── Шапка ─────────────────────────────────────────────── */
+.dim-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.2;
+}
+
+/* 
+ * Убираем толстый outline (2px) при клике и фокусе.
+ * Вместо него рисуем тонкую линию (1px) через inset box-shadow.
+ */
+.dim-header:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
+}
+.dim-card.is-open .dim-header:focus {
+  /* Если карточка раскрыта, рисуем тонкую линию по внутреннему контуру шапки */
+  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
+}
+
+/* Ховер без серого фона (только текст и шеврон) */
+.dim-header:hover .dim-chevron,
+.dim-header:hover .dim-name {
+  color: var(--vscode-textLink-foreground);
+}
+
+.dim-chevron {
+  display: inline-block;
+  width: 12px;
+  font-size: 10px;
+  transition: transform 0.15s;
+  color: var(--vscode-descriptionForeground);
+}
+.dim-card.is-open .dim-chevron {
+  transform: rotate(90deg);
+}
+
+.dim-name {
+  font-weight: 600;
+  flex-grow: 1;
+}
+
+/* ── Кнопки в шапке ────────────────────────────────────── */
+.dim-header-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.dim-header-actions button {
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.dim-header-actions button:hover {
+  color: var(--vscode-textLink-foreground);
+  border-color: var(--vscode-panel-border);
+}
+.dim-header-actions button.danger {
+  color: var(--vscode-errorForeground, #c00);
+}
+
+/* ── Тело карточки ─────────────────────────────────────── */
+.dim-body {
+  display: none;
+  padding: 12px 8px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+.dim-card.is-open .dim-body {
+  display: block;
+}
+
+/* ── Выравнивание инпутов ──────────────────────────────── */
+.dim-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Универсальный лейбл */
+.dim-field-row > label:first-child,
+.dim-field-row > span:first-child {
+  width: 150px; /* Достаточно для самого длинного лейбла */
+  flex-shrink: 0;
+  text-align: right;
+  margin: 0;
+  padding: 0;
+  padding-right: 8px; /* Отступ до инпута */
+  display: inline-block;
+}
+
+.dim-field-row input,
+.dim-field-row select {
+  flex: 1;
+  max-width: 400px;
+  margin: 0;
+}
+
+/* Выравнивание чекбоксов в Axes */
+#strips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#strips-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0; /* Убираем стандартный отступ label */
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: normal;
+  line-height: 1.2;
+}
+
+#strips-list input[type="checkbox"] {
+  margin: 0; /* Убираем стандартные отступы браузера */
+  cursor: pointer;
+}
+
+.dim-field-row label {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  padding-top: 1px;
+}
+
+.dim-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: space-between;
+}
+
+/* Запрещаем блоку кнопок и самим кнопкам сжиматься в шапке */
+.dim-header-actions {
+  flex-shrink: 0; /* Блок с кнопками не должен сжиматься */
+}
+
+.dim-header-actions button {
+  flex-shrink: 0;    /* Кнопки не должны сжиматься */
+  min-width: 24px;   /* Минимальная ширина для иконки */
+  min-height: 24px;  /* Минимальная высота */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;        /* Убираем лишние отступы, чтобы иконка была ровно по центру */
+  font-size: 14px;
+}

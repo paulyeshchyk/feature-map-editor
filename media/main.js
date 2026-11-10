@@ -1,14 +1,15 @@
 import { renderAxes } from './axes.js';
 import { attachDimensionsHandlers, renderDimensions } from './dimensions.js';
+import { attachFieldsHandlers, renderFields } from './fields.js';
 import { renderFilters } from './filters.js';
+import { setLanguage, t } from './i18n.js';
 import { renderPreview } from './preview.js';
 import { renderSettings } from './settings.js';
 import { applyInit, isLoaded, markSaved } from './state.js';
 import { attachToolbarHandlers } from './toolbar.js';
 import { $$, setStatus } from './utils.js';
+import { renderValidation } from './validation.js';
 import { post } from './vscode-api.js';
-import { renderFields, attachFieldsHandlers } from './fields.js';
-
 
 function renderAll() {
   renderFields();
@@ -17,6 +18,7 @@ function renderAll() {
   renderFilters();
   renderSettings();
   renderPreview();
+  renderValidation();
 }
 
 function initTabs() {
@@ -32,24 +34,47 @@ function initMessageBridge() {
   window.addEventListener('message', (e) => {
     const msg = e.data;
     if (!msg || !msg.type) return;
+
     if (msg.type === 'init' || msg.type === 'stateRefreshed') {
-      applyInit(msg); setStatus('Загружено', 'ok'); renderAll();
+      applyInit(msg);
+      setLanguage(msg.state.uiLang);
+
+      // Локализация вкладок
+      document.querySelectorAll('.tabs button').forEach(btn => {
+        const tabName = btn.dataset.tab;
+        if (tabName && t(`tabs.${tabName}`) !== `tabs.${tabName}`) {
+          btn.textContent = t(`tabs.${tabName}`);
+          btn.title = t(`tabs.${tabName}`);
+        }
+      });
+
+      const isFallback = !msg.state.isNative;
+      setStatus(`Загружен: ${msg.state.projectName}`, isFallback ? 'error' : 'ok');
+      renderAll();
       return;
     }
-    if (msg.type === 'saved') { markSaved(); setStatus('Сохранено', 'ok'); return; }
+
+    if (msg.type === 'saved') {
+      markSaved();
+      setStatus('Сохранено', 'ok');
+      return;
+    }
+
     if (msg.type === 'saveError') {
       setStatus(`Ошибка: ${msg.issues.length} проблем(ы)`, 'error');
       console.error('[fm-editor] validation issues:', msg.issues);
-      // Показать в Preview → Warnings
-      const wl = document.querySelector('#preview-warnings');
-      if (wl) {
-        wl.innerHTML = msg.issues.map(i =>
-          `<li style="color:var(--vscode-errorForeground)">
-            [${i.code}] ${escapeHtml(i.message)}
-          </li>`).join('');
-      }
+
+      // Записываем ошибки прямо в state.warnings, чтобы validation.js их подхватил
+      state.warnings = msg.issues.map(i => `[${i.code}] ${i.message}`);
+      renderValidation();
+
+      // Автоматически переключаемся на вкладку "Validation"
+      const valTabBtn = document.querySelector('.tabs button[data-tab="validation"]');
+      if (valTabBtn) valTabBtn.click();
+
       return;
     }
+
     if (msg.type === 'generated') { setStatus(msg.message, msg.ok ? 'ok' : 'error'); return; }
     if (msg.type === 'error') { setStatus(msg.message, 'error'); return; }
   });
@@ -57,7 +82,7 @@ function initMessageBridge() {
 
 // Реакция на изменения размерностей — из любого модуля
 window.addEventListener('fm:dims-changed', () => {
-  renderFields();renderAxes(); renderFilters(); renderSettings(); renderPreview();
+  renderFields(); renderAxes(); renderFilters(); renderSettings(); renderPreview();
 });
 
 function bootstrap() {

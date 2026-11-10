@@ -1,0 +1,74 @@
+/* ── Схема Feature Map ─────────────────────────────────── */
+.schema-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--vscode-foreground);
+}
+
+/* ── Strips (Фильтры) ──────────────────────────────────── */
+.schema-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--vscode-panel-border);
+}
+.schema-strip:last-child {
+  border-bottom: none;
+}
+.schema-strip-label {
+  font-weight: 600;
+  min-width: 90px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+  padding-top: 2px;
+}
+
+/* ── Grid (Таблица) ────────────────────────────────────── */
+.schema-table-container {
+  overflow-x: auto;
+  margin-top: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+}
+.schema-table {
+  border-collapse: collapse;
+  font-size: 11px;
+  width: 100%;
+}
+.schema-table th,
+.schema-table td {
+  border: 1px solid var(--vscode-panel-border);
+  padding: 6px 8px;
+  text-align: center;
+  vertical-align: middle;
+  min-width: 80px;
+}
+.schema-table th {
+  background: var(--vscode-editorGroupHeader-tabsBackground, rgba(128, 128, 128, 0.1));
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+}
+.schema-table th.corner {
+  background: transparent;
+  border: none;
+  width: 100px; 
+}
+.schema-cell {
+  color: var(--vscode-descriptionForeground);
+  font-size: 16px;
+  opacity: 0.3;
+}
+.schema-cell.has-data {
+  color: var(--vscode-textLink-foreground);
+  opacity: 1;
+  font-size: 11px;
+}
+
+/* ── Легенда (Все размерности) ─────────────────────────── */
+.schema-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

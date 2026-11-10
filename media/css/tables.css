@@ -1,0 +1,85 @@
+.items-table, .cols-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: auto;
+  margin-bottom: 8px;
+}
+
+.items-table th,
+.items-table td,
+.cols-table th,
+.cols-table td {
+  padding: 0;
+  border: 1px solid var(--vscode-panel-border);
+  vertical-align: middle;
+  min-width: 250px; /* Минимальная ширина для полей ввода */
+}
+
+.items-table th,
+.cols-table th {
+  padding: 4px 8px;
+  background: var(--vscode-editorGroupHeader-tabsBackground, rgba(128, 128, 128, 0.1));
+  font-weight: 600;
+  text-align: left;
+}
+
+/* Инпуты сливаются с ячейкой */
+.items-table td input,
+.cols-table td input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 0;
+  color: var(--vscode-input-foreground);
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.items-table td input:focus,
+.cols-table td input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  background: var(--vscode-input-background);
+}
+
+/* ── Кнопки действий (урна) ── */
+.items-table .col-actions,
+.cols-table .col-actions {
+  width: 32px;      /* Жестко фиксируем ширину */
+  min-width: 32px;
+  max-width: 32px;
+  padding: 0;       /* Убираем паддинги ячейки, чтобы кнопка заняла всё место */
+  text-align: center;
+  vertical-align: middle;
+  border-right: none;
+}
+
+.items-table .col-actions button,
+.cols-table .col-actions button {
+  width: 100%;       /* Кнопка занимает всю ширину ячейки (32px) */
+  height: 100%;
+  min-height: 24px;
+  padding: 4px 0;
+  font-size: 14px;
+  background: transparent;
+  border: none;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Невидимая колонка-распорка ── */
+/* Забирает на себя всё оставшееся пространство и убирает лишние рамки */
+.items-table .col-grow,
+.cols-table .col-grow {
+  width: 100%;
+  min-width: 0; /* Сбрасываем min-width, чтобы распорка могла быть любой */
+  border: none;
+  background: transparent;
+}

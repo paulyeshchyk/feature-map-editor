@@ -1,0 +1,109 @@
+body {
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+  margin: 0;
+}
+h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+input, select {
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  padding: 4px 8px;
+  border-radius: 2px;
+}
+label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+button.primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+button.secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  padding: 6px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+button.ghost,
+button.small {
+  background: transparent;
+  border: 1px solid var(--vscode-panel-border);
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  color: inherit;
+}
+button.danger {
+  border-color: var(--vscode-errorForeground, #c00);
+  color: var(--vscode-errorForeground, #c00);
+}
+button.danger:hover {
+  background: var(--vscode-errorForeground, #c00);
+  color: #fff;
+}
+.status {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.muted {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  padding: 6px 0;
+}
+
+/* Скрываем нативные тултипы, чтобы не было дублирования */
+[title] {
+  position: relative;
+}
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--vscode-editorWidget-background, #252526);
+  color: var(--vscode-editorWidget-foreground, #cccccc);
+  border: 1px solid var(--vscode-widget-border, #454545);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  margin-bottom: 4px;
+  opacity: 0;
+  animation: tooltipFadeIn 0.1s ease-out 0.3s forwards;
+}
+[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border: 5px solid transparent;
+  border-top-color: var(--vscode-widget-border, #454545);
+  z-index: 1000;
+  opacity: 0;
+  animation: tooltipFadeIn 0.1s ease-out 0.3s forwards;
+}
+@keyframes tooltipFadeIn {
+  to { opacity: 1; }
+}
+
+/* Не показываем подсказки на кнопках (там и так иконки) */
+button[title]:hover::after,
+button[title]:hover::before {
+  display: none;
+}
