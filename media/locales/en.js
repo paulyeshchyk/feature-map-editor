@@ -26,6 +26,37 @@ export default {
     pathRegex: 'Regular expression to extract from path',
     pathTemplate: 'Substitution template (e.g., s$1)',
     pathRuleRegex: 'Regex to search in path',
-    pathRuleSlug: 'Slug assigned on match'
+    pathRuleSlug: 'Slug assigned on match',
+    tabGeneral: 'Название и привязка к полю модуля (dimToFieldMap) — используются в Feature Map и table.',
+    tabColumns: 'Колонки задают таблицу modules.md внутри папки измерения. Поле должно быть из fields.yaml (dimField) или сервисным: id, ident, designation, pureTitle, dir.',
+    tabItems: 'Конкретные значения измерения. slug — ключ в YAML и коде; dir — путь к index.md для ссылок.',
+    pickDir: 'Pick existing section folder (relative to docsRoot)',
+    createDir: 'Create folder and index.md with frontmatter (title, sectionType: Page)',
+    rowDimension: 'Основное измерение, чьи элементы станут строками матрицы Feature Map',
+    columnDimension: 'Основное измерение, чьи элементы станут колонками матрицы Feature Map',
+    stripDimensions: 'Дополнительные измерения для фильтрации данных (отображаются в виде полос-чипсов над сеткой)',
+
+    // Filters
+    emptyInclude: 'Включать ли элементы без значения данного измерения в общий индекс',
+    emptyLabelText: 'Текст метки для отображения пустых/неразмеченных элементов',
+
+    // Settings
+    settingTitle: 'Заголовок отчета или документа Feature Map',
+    settingSectionType: 'Тип секции (sectionType) для frontmatter генерируемых страниц',
+    settingChipLabelField: 'Поле модуля для отображения текста на чипе/карточке',
+    settingEmptyCellSymbol: 'Символ для отображения пустой ячейки в матрице',
+    settingCounterPlaceholder: 'Текст счетчика до инициализации клиентской части',
+    settingResetButtonText: 'Текст кнопки сброса фильтров в интерфейсе',
+    settingModuleHrefAnchor: 'Якорь (anchor) в ссылке на страницу модуля',
+    settingOutputPathTemplate: 'Шаблон выходного пути для генерации файла Feature Map',
+  },
+  mainTabs: {
+    dimensions: 'Измерения проекта: семейства, слои, роли и т.п. Здесь задаются элементы и их роли (Row / Column / Strip).',
+    fields: 'Манифест полей frontmatter → измерений. Определяет, откуда collect-catalog читает значения.',
+    axes: 'Какие измерения становятся строками/колонками Feature Map, а какие — полосами фильтров.',
+    filters: 'Включать ли «пустые» значения (__empty__) в index и как их подписывать.',
+    preview: 'Схематичный предпросмотр сетки и фильтров.',
+    validation: 'Результаты проверки конфигурации перед сохранением.',
+    settings: 'Заголовок, sectionType, chipLabelField и прочие параметры генератора.',
   }
 };

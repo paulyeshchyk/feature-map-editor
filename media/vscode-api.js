@@ -31,6 +31,23 @@ export function confirmAsync(message) {
   });
 }
 
+export function pickDir(currentValue) {
+  const id = requestId();
+  return new Promise((resolve) => {
+    pending.set(id, { resolve });
+    post({ type: 'pickDir', id, currentValue: currentValue || '' });
+  });
+}
+
+export function createDirPage(dir, title, slug) {
+  const id = requestId();
+  return new Promise((resolve) => {
+    pending.set(id, { resolve });
+    post({ type: 'createDirPage', id, dir, title, slug });
+  });
+}
+
+
 window.addEventListener('message', (e) => {
   const m = e.data;
   if (!m || !m.type) return;
@@ -45,5 +62,13 @@ window.addEventListener('message', (e) => {
     const { resolve } = pending.get(m.id);
     pending.delete(m.id);
     resolve(Boolean(m.confirmed));
+  }
+  if (m.type === 'pickDirResult' && pending.has(m.id)) {
+    const { resolve } = pending.get(m.id); pending.delete(m.id);
+    resolve(m.value ?? null);
+  }
+  if (m.type === 'createDirPageResult' && pending.has(m.id)) {
+    const { resolve } = pending.get(m.id); pending.delete(m.id);
+    resolve({ ok: m.ok, error: m.error });
   }
 });

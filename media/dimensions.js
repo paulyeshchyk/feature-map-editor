@@ -1,7 +1,7 @@
 import { t } from './i18n.js';
 import { dimTabs, expandedDims, state } from './state.js';
-import { $, escapeHtml } from './utils.js';
-import { askUser, confirmAsync, post } from './vscode-api.js';
+import { $, escapeHtml, setStatus } from './utils.js';
+import { askUser, confirmAsync, createDirPage, pickDir, post } from './vscode-api.js';
 
 export function renderDimensions() {
   const host = $('#dims-list');
@@ -90,7 +90,12 @@ export function renderDimensions() {
                 </td>
                 <td><input data-field="__slug" value="${escapeHtml(slug)}" spellcheck="false" autocomplete="off" title="${t('hints.itemSlug')}"></td>
                 <td><input data-field="title" value="${escapeHtml(item.title ?? '')}" title="${t('hints.itemTitle')}"></td>
-                <td><input data-field="dir" value="${escapeHtml(item.dir ?? '')}" placeholder="(опционально)" title="${t('hints.itemDir')}"></td>
+                <td><div class="dir-cell">
+                    <input data-field="dir" value="${escapeHtml(item.dir ?? '')}" placeholder="(опционально)" spellcheck="false" autocomplete="off"> 
+                    <button type="button" class="small" data-act="pick-dir" title="${t('hints.pickDir')}">📂</button>
+                    <button type="button" class="small" data-act="create-dir" title="${t('hints.createDir')}">📄</button>
+                </div></td>
+
                 <td class="col-grow"></td>
               </tr>`).join('')}
           </tbody>
@@ -194,6 +199,46 @@ export function attachDimensionsHandlers() {
       if (def.columns && def.columns[idx]) {
         def.columns.splice(idx, 1);
         renderDimensions();
+      }
+    } else if (act === 'pick-dir') {
+      const tr = t.closest('tr');
+      const slug = tr?.dataset.slug;
+      const cur = tr?.querySelector('input[data-field="dir"]')?.value ?? '';
+
+      const picked = await pickDir(cur);
+      if (picked === null) return;
+
+      const items = state.draft.dimensions[dim]?.items;
+      if (items && slug) {
+        items[slug].dir = picked;
+        renderDimensions();
+      }
+    }
+    else if (act === 'create-dir') {
+      const tr = t.closest('tr');
+      const slug = tr?.dataset.slug;
+      const dirVal = (tr?.querySelector('input[data-field="dir"]')?.value ?? '').trim();
+      const items = state.draft.dimensions[dim]?.items;
+      const item = items?.[slug];
+
+      if (!slug || !item) return;
+      if (!dirVal) {
+        post({ type: 'error', message: 'Сначала укажите путь в поле dir' });
+        return;
+      }
+
+      const ok = await confirmAsync(
+        `Создать папку "${dirVal}" и index.md с frontmatter (title, sectionType: Page)?`
+      );
+      if (!ok) return;
+
+      const res = await createDirPage(dirVal, item.title || slug, slug);
+      if (res.ok) {
+        item.dir = dirVal;
+        renderDimensions();
+        setStatus(`Создано: ${dirVal}/index.md`, 'ok');
+      } else {
+        post({ type: 'error', message: res.error || 'Не удалось создать папку' });
       }
     }
   });

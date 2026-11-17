@@ -1,10 +1,26 @@
 import type { FeatureMapConfig } from './imports/docs-registry/emit-feature-map/feature-map.types.js';
 export type { FeatureMapConfig } from './imports/docs-registry/emit-feature-map/feature-map.types.js';
 
-export interface DimensionItem { title: string; dir?: string; }
-export interface DimensionDef   { title?: string; items: Record<string, DimensionItem>; }
+export interface DimensionColumn {
+  label: string;
+  field: string;
+}
 
-export interface FieldsManifest { [key: string]: FieldDef; }
+export interface DimensionItem {
+  title: string;
+  dir?: string;
+}
+
+export interface DimensionDef {
+  title?: string;
+  columns?: DimensionColumn[];
+  items: Record<string, DimensionItem>;
+}
+
+export interface FieldsManifest {
+  [key: string]: FieldDef;
+}
+
 export interface FieldDef {
   kind?: 'multi' | 'scalar';
   dimension?: string;
@@ -57,6 +73,10 @@ export interface EditorState {
     catalogPath: string;
   };
   warnings: string[];
+  /** Канонический список колонок, доступных для выбора в UI. */
+  columnCatalog: ColumnOption[];
+  /** Текст-подсказка для вкладки «Dimensions → Columns». */
+  columnHint: string;
 }
 
 export interface CatalogSnapshot {
@@ -75,20 +95,43 @@ export type ValidationIssue = {
 
 export type WebviewMessage =
   | { type: 'ready' }
-  | { type: 'save';   draft: EditorDraft }
+  | { type: 'save'; draft: EditorDraft }
   | { type: 'reset' }
   | { type: 'generate' }
-  | { type: 'openFile';       file: 'config' | 'layout' | 'fields' | 'dimensions' | 'catalog' }
+  | { type: 'openFile'; file: 'config' | 'layout' | 'fields' | 'dimensions' | 'catalog' }
   | { type: 'pickProjectRoot' }
-  | { type: 'prompt';  id: string; message: string; defaultValue?: string }
-  | { type: 'confirm'; id: string; message: string };
+  | { type: 'prompt'; id: string; message: string; defaultValue?: string }
+  | { type: 'confirm'; id: string; message: string }
+  | { type: 'createDirPage'; id: string; message: string; dir: string; slug: string; title: string }
+  | { type: 'pickDir'; currentValue: string; message: string; id: string }
+  ;
+
 
 export type ExtensionMessage =
-  | { type: 'init';           state: EditorState }
+  | { type: 'init'; state: EditorState }
   | { type: 'stateRefreshed'; state: EditorState }
-  | { type: 'saved';          ok: true; warnings: string[] }
-  | { type: 'saveError';      issues: ValidationIssue[] }
-  | { type: 'generated';      ok: boolean; message: string }
-  | { type: 'error';          message: string }
-  | { type: 'promptResult';   id: string; value: string | null }
-  | { type: 'confirmResult';  id: string; confirmed: boolean };
+  | { type: 'saved'; ok: true; warnings: string[] }
+  | { type: 'saveError'; issues: ValidationIssue[] }
+  | { type: 'generated'; ok: boolean; message: string }
+  | { type: 'error'; message: string }
+  | { type: 'promptResult'; id: string; value: string | null }
+  | { type: 'confirmResult'; id: string; confirmed: boolean }
+  | { type: 'pickDirResult'; id: string; value: string | null }
+  | { type: 'createDirPageResult'; id: string; value?: string | null; ok: boolean; error?: string | null };
+
+export interface ColumnOption {
+  /** Имя поля в `CatalogModule` (`id`, `ident`, `families`, …). */
+  field: string;
+  /** Человекочитаемый заголовок по умолчанию. */
+  label: string;
+  /** `service` — id/ident/designation/pureTitle/dir; `field` — из `_fields.yaml`. */
+  source: 'service' | 'field';
+  /** Подсказка для UI (напр. «Измерение: family»). */
+  description?: string;
+}
+
+export const COLUMNS_HINT =
+  'Колонки задают таблицу `modules.md` внутри папки измерения: ' +
+  'какие поля модуля и под какими заголовками показывать. ' +
+  'Поле должно быть определено в `_registry/fields.yaml` (как `dimField`) ' +
+  'или быть сервисным: `id`, `ident`, `designation`, `pureTitle`, `dir`.';

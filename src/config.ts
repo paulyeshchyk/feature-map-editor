@@ -2,6 +2,17 @@ import * as yaml from 'js-yaml';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { DEFAULT_FEATURE_MAP_CONFIG } from './imports/docs-registry/emit-feature-map/feature-map.constants'; // копия констант
+
+import { COLUMNS_HINT, type ColumnOption } from './protocol';
+
+const SERVICE_COLUMNS: ReadonlyArray<ColumnOption> = [
+  { field: 'id', label: 'ID', source: 'service' },
+  { field: 'ident', label: 'Идентификатор', source: 'service' },
+  { field: 'designation', label: 'Предназначение', source: 'service' },
+  { field: 'pureTitle', label: 'Название', source: 'service' },
+  { field: 'dir', label: 'Папка', source: 'service' },
+];
+
 import type {
   CatalogSnapshot,
   DimensionDef,
@@ -32,12 +43,35 @@ export interface ProjectConfig {
 const YFM_NAMES = ['.yfm', 'yfm-config.yaml', 'yfm-config.yml'];
 
 
+/**
+ * Канонический список колонок: сервисные поля + все поля из `_fields.yaml`.
+ * Для поля-измерения берётся `dimField` (имя поля в `CatalogModule`), иначе — ключ.
+ * `_fields.yaml` может переопределить label сервисного поля.
+ */
+export function buildColumnCatalog(fields: FieldsManifest): ColumnOption[] {
+  const byField = new Map<string, ColumnOption>();
+  for (const c of SERVICE_COLUMNS) byField.set(c.field, c);
+
+  for (const [key, def] of Object.entries(fields)) {
+    const field = (def.dimField as string | undefined) || key;
+    const prev = byField.get(field);
+    const label = (def.label as string | undefined) || prev?.label || key;
+    byField.set(field, {
+      field,
+      label,
+      source: 'field',
+      description: def.dimension ? `Измерение: ${def.dimension}` : undefined,
+    });
+  }
+  return [...byField.values()];
+}
+
 /** Автопоиск корня: ищем ./_registry от workspaceFolder вверх. */
 export function discoverProjectRoot(workspaceRoot: string): string | null {
   let cur = workspaceRoot;
   for (let i = 0; i < 8; i++) {
-    if (fs.existsSync(path.join(cur, 'docs', '_registry')) || 
-        YFM_NAMES.some(f => fs.existsSync(path.join(cur, f)))) {
+    if (fs.existsSync(path.join(cur, 'docs', '_registry')) ||
+      YFM_NAMES.some(f => fs.existsSync(path.join(cur, f)))) {
       return cur;
     }
     const parent = path.dirname(cur);
@@ -67,8 +101,8 @@ export function resolveProject(projectRoot: string, lang: string): ProjectConfig
 
   const isNative = !!customConfig;
   // В fallback-режиме показываем полный путь, в native — красивое имя
-  const projectName = customConfig?.projectName 
-    || yfm?.title 
+  const projectName = customConfig?.projectName
+    || yfm?.title
     || (isNative ? path.basename(projectRoot) : projectRoot);
 
   // Если конфиг в yfm найден — используем его
@@ -99,7 +133,7 @@ export function resolveProject(projectRoot: string, lang: string): ProjectConfig
   // Fallback
   const langYaml = path.join(registryDir, `${lang}.yaml`);
   const sharedYaml = path.join(registryDir, 'dimensions.yaml');
-  
+
   return {
     projectName,
     isNative: false,
@@ -206,18 +240,18 @@ function readCatalog(file: string): { value: CatalogSnapshot | null; warnings: s
 
 export function loadAll(project: ProjectConfig): EditorState {
   const { paths, projectName, isNative } = project;
-  
-  const layout  = readLayout(paths.layoutPath);
-  const config  = readConfig(paths.configPath);
-  const fields  = readFields(paths.fieldsPath);
-  const dims    = readDimensions(paths.dimensionsPath);
+
+  const layout = readLayout(paths.layoutPath);
+  const config = readConfig(paths.configPath);
+  const fields = readFields(paths.fieldsPath);
+  const dims = readDimensions(paths.dimensionsPath);
   const catalog = readCatalog(paths.catalogPath);
-  
+
   const warnings = [
-    ...layout.warnings, 
-    ...config.warnings, 
-    ...fields.warnings, 
-    ...dims.warnings, 
+    ...layout.warnings,
+    ...config.warnings,
+    ...fields.warnings,
+    ...dims.warnings,
     ...catalog.warnings
   ];
 
@@ -230,11 +264,13 @@ export function loadAll(project: ProjectConfig): EditorState {
     unknownConfigKeys: config.unknown,
     unknownLayoutKeys: layout.unknown,
     catalog: catalog.value,
+    columnCatalog: buildColumnCatalog(fields.value),
+    columnHint: COLUMNS_HINT,
     projectName,
     isNative,
     uiLang: 'ru',
     paths,
-    warnings,    
+    warnings,
   };
 }
 
@@ -242,26 +278,26 @@ export interface SaveResult { written: string[]; }
 
 export function saveAll(paths: ResolvedPaths, draft: EditorDraft, unknown: { config: Record<string, unknown>; layout: Record<string, unknown> }): SaveResult {
   const written: string[] = [];
-  
+
   const ensureDir = (p: string) => {
     const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   };
 
   ensureDir(paths.configPath);
-  fs.writeFileSync(paths.configPath, JSON.stringify({ ...draft.config, ...unknown.config }, null, 2) + '\n', 'utf8'); 
+  fs.writeFileSync(paths.configPath, JSON.stringify({ ...draft.config, ...unknown.config }, null, 2) + '\n', 'utf8');
   written.push(paths.configPath);
 
   ensureDir(paths.layoutPath);
-  fs.writeFileSync(paths.layoutPath, JSON.stringify({ ...draft.layout, ...unknown.layout }, null, 2) + '\n', 'utf8'); 
+  fs.writeFileSync(paths.layoutPath, JSON.stringify({ ...draft.layout, ...unknown.layout }, null, 2) + '\n', 'utf8');
   written.push(paths.layoutPath);
 
   ensureDir(paths.fieldsPath);
-  fs.writeFileSync(paths.fieldsPath, yaml.dump({ fields: draft.fields }, { lineWidth: 120, noRefs: true }), 'utf8'); 
+  fs.writeFileSync(paths.fieldsPath, yaml.dump({ fields: draft.fields }, { lineWidth: 120, noRefs: true }), 'utf8');
   written.push(paths.fieldsPath);
 
   ensureDir(paths.dimensionsPath);
-  fs.writeFileSync(paths.dimensionsPath, yaml.dump({ dimensions: draft.dimensions }, { lineWidth: 120, noRefs: true }), 'utf8'); 
+  fs.writeFileSync(paths.dimensionsPath, yaml.dump({ dimensions: draft.dimensions }, { lineWidth: 120, noRefs: true }), 'utf8');
   written.push(paths.dimensionsPath);
 
   return { written };

@@ -52,6 +52,8 @@ export class EditorPanel {
       case 'pickProjectRoot': return this.pickProjectRoot();
       case 'prompt': return this.handlePrompt(msg);   // msg: PromptMsg
       case 'confirm': return this.handleConfirm(msg);  // msg: ConfirmMsg
+      case 'pickDir': return this.handlePickDir(msg);
+      case 'createDirPage': return this.handleCreateDirPage(msg);
     }
   }
 
@@ -101,8 +103,8 @@ export class EditorPanel {
 
   private async save(draft: EditorDraft): Promise<void> {
     if (!this.state) return this.post({ type: 'error', message: 'Состояние не загружено' });
-    
-    const issues = validateDraft(draft);
+
+    const issues = validateDraft(draft, this.state.columnCatalog);
     const errors = issues.filter(i => i.level === 'error');
     if (errors.length) return this.post({ type: 'saveError', issues });
 
@@ -115,20 +117,20 @@ export class EditorPanel {
         'Дополнить yfm',
         'Только файлы конфигурации'
       );
-      
+
       if (choice === 'Дополнить yfm') {
         writeYfm = true;
       } else if (choice !== 'Только файлы конфигурации') {
         // Если пользователь нажал Esc или закрыл окно — сообщаем фронтенду
         this.post({ type: 'error', message: 'Сохранение отменено пользователем' });
-        return; 
+        return;
       }
     }
 
     try {
-      saveAll(this.state.paths, draft, { 
-        config: this.state.unknownConfigKeys, 
-        layout: this.state.unknownLayoutKeys 
+      saveAll(this.state.paths, draft, {
+        config: this.state.unknownConfigKeys,
+        layout: this.state.unknownLayoutKeys
       });
 
       if (writeYfm) {
@@ -136,7 +138,7 @@ export class EditorPanel {
       }
 
       await this.refresh(); // Перечитываем с диска (отправит init)
-      
+
       // Отправляем подтверждение
       this.post({ type: 'saved', ok: true, warnings: issues.filter(i => i.level === 'warning').map(i => i.message) });
     } catch (e) {
@@ -158,7 +160,7 @@ export class EditorPanel {
 
     let yfm: any = {};
     if (fs.existsSync(yfmPath)) {
-      try { yfm = yaml.load(fs.readFileSync(yfmPath, 'utf8')) || {}; } catch (e) {}
+      try { yfm = yaml.load(fs.readFileSync(yfmPath, 'utf8')) || {}; } catch (e) { }
     }
 
     // Формируем пути относительного корня проекта
@@ -244,5 +246,130 @@ export class EditorPanel {
       return;
     }
     return this.generate();
+  }
+
+  private resolveDocsRoot(): string {
+    const fromCatalog = this.state?.catalog?.docsRoot;
+    if (fromCatalog && typeof fromCatalog === 'string' && fromCatalog.length > 0) {
+      return fromCatalog;
+    }
+    const lang = vscode.workspace.getConfiguration('featureMap').get<string>('lang') || 'ru';
+    const modulesFolder = this.state?.draft?.layout?.modulesFolder ?? 'Модули';
+    const projectRoot = this.state?.paths.projectRoot ?? '';
+
+    // Поддержка обоих layouts: <root>/docs/... (legacy) и <root>/... (новый)
+    const candidates = [
+      path.join(projectRoot, 'docs', lang, ...(modulesFolder ? [modulesFolder] : [])),
+      path.join(projectRoot, lang, ...(modulesFolder ? [modulesFolder] : [])),
+    ];
+    for (const c of candidates) if (fs.existsSync(c)) return c;
+    return candidates[0];
+  }
+
+  private async handlePickDir(
+    msg: Extract<WebviewMessage, { type: 'pickDir' }>,
+  ): Promise<void> {
+    if (!this.state) {
+      return this.post({ type: 'error', message: 'Состояние не загружено' });
+    }
+    const docsRoot = this.resolveDocsRoot();
+
+    let defaultUri: vscode.Uri | undefined;
+    if (msg.currentValue) {
+      const abs = path.isAbsolute(msg.currentValue)
+        ? msg.currentValue
+        : path.join(docsRoot, msg.currentValue);
+      const parent = path.dirname(abs);
+      if (fs.existsSync(abs)) defaultUri = vscode.Uri.file(abs);
+      else if (fs.existsSync(parent)) defaultUri = vscode.Uri.file(parent);
+    }
+    if (!defaultUri && fs.existsSync(docsRoot)) defaultUri = vscode.Uri.file(docsRoot);
+
+    const picked = await vscode.window.showOpenDialog({
+      canSelectFolders: true,
+      canSelectFiles: false,
+      canSelectMany: false,
+      defaultUri,
+      openLabel: 'Выбрать папку раздела',
+      title: 'Папка с index.md для значения измерения',
+    });
+
+    if (!picked?.length) {
+      return this.post({ type: 'pickDirResult', id: msg.id, value: null });
+    }
+
+    const rel = path.relative(docsRoot, picked[0].fsPath).replace(/\\/g, '/');
+    if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
+      this.post({
+        type: 'error',
+        message: `Папка вне docsRoot (${docsRoot}). Выберите папку внутри неё.`,
+      });
+      return this.post({ type: 'pickDirResult', id: msg.id, value: null });
+    }
+
+    this.post({ type: 'pickDirResult', id: msg.id, value: rel });
+  }
+
+  private async handleCreateDirPage(
+    msg: Extract<WebviewMessage, { type: 'createDirPage' }>,
+  ): Promise<void> {
+    if (!this.state) {
+      return this.post({ type: 'error', message: 'Состояние не загружено' });
+    }
+
+    const dir = (msg.dir || '').trim();
+    if (!dir) {
+      return this.post({
+        type: 'createDirPageResult', id: msg.id, ok: false,
+        error: 'Пустой путь. Введите dir или выберите папку.',
+      });
+    }
+    if (path.isAbsolute(dir)) {
+      return this.post({
+        type: 'createDirPageResult', id: msg.id, ok: false,
+        error: 'Ожидается относительный путь от docsRoot.',
+      });
+    }
+
+    const docsRoot = this.resolveDocsRoot();
+    const absDir = path.resolve(docsRoot, dir);
+    const relCheck = path.relative(docsRoot, absDir);
+
+    if (!relCheck || relCheck.startsWith('..') || path.isAbsolute(relCheck)) {
+      return this.post({
+        type: 'createDirPageResult', id: msg.id, ok: false,
+        error: `Путь выходит за пределы docsRoot (${docsRoot}).`,
+      });
+    }
+
+    const indexMd = path.join(absDir, 'index.md');
+    try {
+      if (fs.existsSync(indexMd)) {
+        return this.post({
+          type: 'createDirPageResult', id: msg.id, ok: false,
+          error: `index.md уже существует: ${path.join(dir, 'index.md')}`,
+        });
+      }
+
+      fs.mkdirSync(absDir, { recursive: true });
+
+      const title = (msg.title || msg.slug || path.basename(dir)).trim();
+      const fm = [
+        '---',
+        `title: ${JSON.stringify(title)}`,
+        `pureTitle: ${JSON.stringify(title)}`,
+        'sectionType: Page',
+        '---',
+        '',
+        `# ${title}`,
+        '',
+      ].join('\n');
+
+      fs.writeFileSync(indexMd, fm, 'utf8');
+      this.post({ type: 'createDirPageResult', id: msg.id, ok: true });
+    } catch (e) {
+      const err = e instanceof Error ? e.message : String(e);
+      this.post({ type: 'createDirPageResult', id: msg.id, ok: false, error: err });
+    }
   }
 }

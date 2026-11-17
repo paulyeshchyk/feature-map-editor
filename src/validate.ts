@@ -1,8 +1,12 @@
-import type { EditorDraft, ValidationIssue } from './protocol';
+import type { ColumnOption, EditorDraft, ValidationIssue } from './protocol';
 
 const SLUG_RE = /^[a-zA-Z0-9_][a-zA-Z0-9_\-/]*$/;
 
-export function validateDraft(d: EditorDraft): ValidationIssue[] {
+export function validateDraft(
+  d: EditorDraft,
+  columnCatalog: ColumnOption[] = [],
+): ValidationIssue[] {
+
   const out: ValidationIssue[] = [];
   const cfg = d.config;
   const dims = d.dimensions || {};
@@ -87,6 +91,53 @@ export function validateDraft(d: EditorDraft): ValidationIssue[] {
   for (const [key, f] of Object.entries(d.fields || {})) {
     if (f.dimension && !dims[f.dimension]) {
       out.push({ level: 'error', code: 'FIELD_DIM_MISSING', message: `Поле «${key}» ссылается на удаленную размерность «${f.dimension}». Исправьте на вкладке Fields.` });
+    }
+  }
+
+  // ── 5. Проверка columns ──
+  const allowed = new Set(columnCatalog.map(c => c.field));
+  const catalogReady = allowed.size > 0;
+
+  for (const [dimName, dim] of Object.entries(dims)) {
+    const cols = dim.columns;
+    if (!cols) continue;
+    const seen = new Set<string>();
+
+    for (let i = 0; i < cols.length; i++) {
+      const col = cols[i];
+      const path = `dimensions.${dimName}.columns[${i}]`;
+
+      if (!col.field) {
+        out.push({
+          level: 'error', code: 'COLUMN_EMPTY_FIELD', path,
+          message: `Колонка #${i + 1} в «${dimName}»: не задано поле (field).`,
+        });
+        continue;
+      }
+
+      if (catalogReady && !allowed.has(col.field)) {
+        out.push({
+          level: 'error', code: 'COLUMN_UNKNOWN_FIELD', path,
+          message:
+            `Колонка «${col.label || col.field}» в «${dimName}»: поле «${col.field}» ` +
+            `не определено в fields.yaml. Доступно: ${[...allowed].join(', ')}.`,
+        });
+      }
+
+      if (seen.has(col.field)) {
+        out.push({
+          level: 'warning', code: 'COLUMN_DUPLICATE', path,
+          message: `Колонка с полем «${col.field}» повторяется в «${dimName}».`,
+        });
+      }
+      seen.add(col.field);
+
+      if (!col.label) {
+        out.push({
+          level: 'warning', code: 'COLUMN_EMPTY_LABEL', path,
+          message: `Колонка «${col.field}» в «${dimName}»: пустой label — будет использован ключ поля.`,
+        });
+      }
     }
   }
 

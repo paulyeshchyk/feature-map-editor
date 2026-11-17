@@ -45,6 +45,10 @@ function initMessageBridge() {
         if (tabName && t(`tabs.${tabName}`) !== `tabs.${tabName}`) {
           btn.textContent = t(`tabs.${tabName}`);
           btn.title = t(`tabs.${tabName}`);
+
+          const tabHintKey = `hints.mainTabs.${tabName}`;
+          const hint = t(tabHintKey);
+          if (hint && hint !== tabHintKey) btn.title = hint;
         }
       });
 

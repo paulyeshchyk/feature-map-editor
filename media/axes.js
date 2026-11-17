@@ -35,6 +35,7 @@ export function renderAxes() {
 
   const host = $('#strips-list');
   if (!host) return;
+
   host.innerHTML = '';
   for (const d of dimNames) {
     if (d === cfg.rowDimension || d === cfg.columnDimension) continue;
